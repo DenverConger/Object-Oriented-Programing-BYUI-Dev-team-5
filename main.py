@@ -31,11 +31,6 @@ class MyGame(arcade.Window):
         # If you have sprite lists, you should create them here,
         # and set them to None
 
-    def setup(self):
-        """ Set up the game variables. Call to re-start the game. """
-        # Create your sprites and sprite lists here
-        pass
-
     def on_draw(self):
         """
         Render the screen.
@@ -47,13 +42,6 @@ class MyGame(arcade.Window):
 
         # Call draw() on all your sprite lists below
 
-    def on_update(self, delta_time):
-        """
-        All the logic to move, and the game logic goes here.
-        Normally, you'll call update() on the sprite lists that
-        need it.
-        """
-        pass
 
     def on_key_press(self, key, key_modifiers):
         """
