@@ -95,6 +95,8 @@ def main():
     game.setup()
     arcade.run()
 
+def enemy():
+    pass
 
 if __name__ == "__main__":
     main()
