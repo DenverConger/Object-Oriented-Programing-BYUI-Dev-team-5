@@ -1,9 +1,7 @@
 """
 Starting Template
-
 Once you have learned how to use classes, you can begin your program with this
 template.
-
 If Python and Arcade are installed, this example can be run from the command line with:
 python -m arcade.examples.starting_template
 """
@@ -16,6 +14,7 @@ SCREEN_TITLE = "Arena"
 MOVEMENT_SPEED = 50
 
 
+
 class Game(arcade.Window):
 
     def __init__(self):
@@ -25,12 +24,39 @@ class Game(arcade.Window):
 
         # Sprite Lists Initialization
         self.all_sprites = arcade.SpriteList()
+        self.wall_list = None
         
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
+        sprite_img = ":resources:images/tiles/brickBrown.png"
+
+        for x in range(0, 1350, 64):
+            wall_top = arcade.Sprite(sprite_img, 0.5)
+            wall_top.center_x = x
+            wall_top.center_y = 668
+            self.wall_list.append(wall_top)
+
+            wall_bottom = arcade.Sprite(sprite_img, 0.5)
+            wall_bottom.center_x = x
+            wall_bottom.center_y = 32
+            self.wall_list.append(wall_bottom)
+
+        for y in range(96, 636, 64):
+
+            wall_left = arcade.Sprite(sprite_img, 0.5)
+            wall_left.center_y = y
+            wall_left.center_x = 32
+            self.wall_list.append(wall_left)
+
+            wall_right = arcade.Sprite(sprite_img, 0.5)
+            wall_right.center_y = y
+            wall_right.center_x = 1318
+            self.wall_list.append(wall_right)
+        
         
         self.player = arcade.Sprite("images/player_circle.png", 1)
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -54,6 +80,8 @@ class Game(arcade.Window):
         arcade.start_render()
 
         # Call draw() on all your sprite lists below
+
+        self.wall_list.draw()
         self.all_sprites.draw()
 
     def on_update(self, delta_time):
@@ -86,6 +114,13 @@ class Game(arcade.Window):
         self.all_sprites.update()
 
     def on_key_press(self, key, key_modifiers):
+        """
+        Called whenever a key on the keyboard is pressed.
+        For a full list of keys, see:
+        http://arcade.academy/arcade.key.html
+        """
+        
+
         if key == arcade.key.UP or key == arcade.key.W:
             self.up_pressed = True
         if key == arcade.key.DOWN or key == arcade.key.S:
