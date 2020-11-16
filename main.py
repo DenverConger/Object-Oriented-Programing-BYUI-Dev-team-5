@@ -8,33 +8,41 @@ If Python and Arcade are installed, this example can be run from the command lin
 python -m arcade.examples.starting_template
 """
 import arcade
+import os
 
 SCREEN_WIDTH = 1350
 SCREEN_HEIGHT = 700
-SCREEN_TITLE = "Starting Template"
+SCREEN_TITLE = "Arena"
+MOVEMENT_SPEED = 50
 
 
-class MyGame(arcade.Window):
-    """
-    Main application class.
+class Game(arcade.Window):
 
-    NOTE: Go ahead and delete the methods you don't need.
-    If you do need a method, delete the 'pass' and replace it
-    with your own code. Don't leave 'pass' in this program.
-    """
+    def __init__(self):
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        self.center_window()
+        arcade.set_background_color(arcade.color.WHITE)
 
-    def __init__(self, width, height, title):
-        super().__init__(width, height, title)
-
-        arcade.set_background_color(arcade.color.AMAZON)
-
-        # If you have sprite lists, you should create them here,
-        # and set them to None
+        # Sprite Lists Initialization
+        self.all_sprites = arcade.SpriteList()
+        
+        file_path = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(file_path)
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
-        # Create your sprites and sprite lists here
-        pass
+        
+        self.player = arcade.Sprite("images/player_circle.png", 1)
+        self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+        # self.player.center_y = SCREEN_HEIGHT / 2
+        # self.player.center_x = SCREEN_WIDTH / 2
+
+        self.all_sprites.append(self.player)
+
+        self.up_pressed = False
+        self.down_pressed = False
+        self.right_pressed = False
+        self.left_pressed = False
 
     def on_draw(self):
         """
@@ -46,35 +54,64 @@ class MyGame(arcade.Window):
         arcade.start_render()
 
         # Call draw() on all your sprite lists below
+        self.all_sprites.draw()
 
     def on_update(self, delta_time):
-        """
-        All the logic to move, and the game logic goes here.
-        Normally, you'll call update() on the sprite lists that
-        need it.
-        """
-        pass
+        self.player.change_y = 0
+        self.player.change_x = 0
+
+
+        # Keyboard Movement
+        if self.up_pressed and not self.down_pressed:
+            self.player.change_y = MOVEMENT_SPEED
+        elif self.down_pressed and not self.up_pressed:
+            self.player.change_y = -MOVEMENT_SPEED
+        if self.right_pressed and not self.left_pressed:
+            self.player.change_x = MOVEMENT_SPEED
+        elif self.left_pressed and not self.right_pressed:
+            self.player.change_x = -MOVEMENT_SPEED
+        # If you press both up and down, you can move the player right, but not left. If you press right and left, you can move the player down, but not up.
+
+        # Hitting Edges of Screen
+        if self.player.top > SCREEN_HEIGHT:
+            self.player.top = SCREEN_HEIGHT
+        if self.player.bottom < 0:
+            self.player.bottom = 0
+        if self.player.left < 0:
+            self.player.left = 0
+        if self.player.right > SCREEN_WIDTH:
+            self.player.right = SCREEN_WIDTH
+        
+
+        self.all_sprites.update()
 
     def on_key_press(self, key, key_modifiers):
-        """
-        Called whenever a key on the keyboard is pressed.
+        if key == arcade.key.UP or key == arcade.key.W:
+            self.up_pressed = True
+        if key == arcade.key.DOWN or key == arcade.key.S:
+            self.down_pressed = True
+        if key == arcade.key.RIGHT or key == arcade.key.D:
+            self.right_pressed = True
+        if key == arcade.key.LEFT or key == arcade.key.A:
+            self.left_pressed = True
 
-        For a full list of keys, see:
-        http://arcade.academy/arcade.key.html
-        """
-        pass
+        if key == arcade.key.Q:
+            arcade.close_window()
 
     def on_key_release(self, key, key_modifiers):
-        """
-        Called whenever the user lets off a previously pressed key.
-        """
-        pass
+        if key == arcade.key.UP or key == arcade.key.W:
+            self.up_pressed = False
+        if key == arcade.key.DOWN or key == arcade.key.S:
+            self.down_pressed = False
+        if key == arcade.key.RIGHT or key == arcade.key.D:
+            self.right_pressed = False
+        if key == arcade.key.LEFT or key == arcade.key.A:
+            self.left_pressed = False
 
-    def on_mouse_motion(self, x, y, delta_x, delta_y):
-        """
-        Called whenever the mouse moves.
-        """
-        pass
+    def on_mouse_motion(self, x, y, dx, dy):
+        # These two lines are two types of player motion based on the mouse. Uncomment to unlock the motion.
+        self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
+        self.player.position = (x, y)                                                       # Mouse Movement
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         """
@@ -91,7 +128,7 @@ class MyGame(arcade.Window):
 
 def main():
     """ Main method """
-    game = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    game = Game()
     game.setup()
     arcade.run()
 
