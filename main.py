@@ -124,7 +124,7 @@ class Game(arcade.Window):
         Called when a user releases a mouse button.
         """
         pass
-
+#this is a comment
 
 def main():
     """ Main method """
