@@ -8,61 +8,62 @@ python -m arcade.examples.starting_template
 import arcade
 import os
 
-SCREEN_WIDTH = 1350
-SCREEN_HEIGHT = 700
+SCREEN_WIDTH = 1344
+SCREEN_HEIGHT = 704
 SCREEN_TITLE = "Arena"
-MOVEMENT_SPEED = 50
+SCALING = 0.5
+MOVEMENT_SPEED = 10
 
 
 
 class Game(arcade.Window):
-
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
         self.center_window()
         arcade.set_background_color(arcade.color.WHITE)
 
         # Sprite Lists Initialization
-        self.all_sprites = arcade.SpriteList()
+        self.all_sprites = None
         self.wall_list = None
         
+        # Lets us use relative file paths
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
+        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
-        sprite_img = ":resources:images/tiles/brickBrown.png"
+        self.all_sprites = arcade.SpriteList()
+        wall_img = ":resources:images/tiles/brickBrown.png"
+        
 
-        for x in range(0, 1350, 64):
-            wall_top = arcade.Sprite(sprite_img, 0.5)
+        for x in range(32, SCREEN_WIDTH, 64):
+            wall_top = arcade.Sprite(wall_img, SCALING)
             wall_top.center_x = x
-            wall_top.center_y = 668
+            wall_top.center_y = SCREEN_HEIGHT - 32
             self.wall_list.append(wall_top)
+            self.all_sprites.append(wall_top)
 
-            wall_bottom = arcade.Sprite(sprite_img, 0.5)
+            wall_bottom = arcade.Sprite(wall_img, SCALING)
             wall_bottom.center_x = x
             wall_bottom.center_y = 32
             self.wall_list.append(wall_bottom)
-
-        for y in range(96, 636, 64):
-
-            wall_left = arcade.Sprite(sprite_img, 0.5)
+            self.all_sprites.append(wall_bottom)
+        for y in range(96, SCREEN_HEIGHT - 64, 64):
+            wall_left = arcade.Sprite(wall_img, SCALING)
             wall_left.center_y = y
             wall_left.center_x = 32
             self.wall_list.append(wall_left)
+            self.all_sprites.append(wall_left)
 
-            wall_right = arcade.Sprite(sprite_img, 0.5)
+            wall_right = arcade.Sprite(wall_img, SCALING)
             wall_right.center_y = y
-            wall_right.center_x = 1318
+            wall_right.center_x = SCREEN_WIDTH - 32
             self.wall_list.append(wall_right)
+            self.all_sprites.append(wall_right)
         
-        
-        self.player = arcade.Sprite("images/player_circle.png", 1)
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-        # self.player.center_y = SCREEN_HEIGHT / 2
-        # self.player.center_x = SCREEN_WIDTH / 2
-
         self.all_sprites.append(self.player)
 
         self.up_pressed = False
@@ -74,20 +75,16 @@ class Game(arcade.Window):
         """
         Render the screen.
         """
-
         # This command should happen before we start drawing. It will clear
         # the screen to the background color, and erase what we drew last frame.
         arcade.start_render()
 
         # Call draw() on all your sprite lists below
-
-        self.wall_list.draw()
         self.all_sprites.draw()
 
     def on_update(self, delta_time):
         self.player.change_y = 0
         self.player.change_x = 0
-
 
         # Keyboard Movement
         if self.up_pressed and not self.down_pressed:
@@ -110,7 +107,7 @@ class Game(arcade.Window):
         if self.player.right > SCREEN_WIDTH:
             self.player.right = SCREEN_WIDTH
         
-
+        # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
         self.all_sprites.update()
 
     def on_key_press(self, key, key_modifiers):
@@ -119,7 +116,6 @@ class Game(arcade.Window):
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
-        
 
         if key == arcade.key.UP or key == arcade.key.W:
             self.up_pressed = True
@@ -145,8 +141,9 @@ class Game(arcade.Window):
 
     def on_mouse_motion(self, x, y, dx, dy):
         # These two lines are two types of player motion based on the mouse. Uncomment to unlock the motion.
-        self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
-        self.player.position = (x, y)                                                       # Mouse Movement
+        # self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
+        # self.player.position = (x, y)                                                       # Mouse Movement
+        pass
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         """
@@ -159,7 +156,6 @@ class Game(arcade.Window):
         Called when a user releases a mouse button.
         """
         pass
-#this is a comment
 
 def main():
     """ Main method """
