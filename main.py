@@ -55,6 +55,10 @@ class Game(arcade.Window):
         self.all_sprites = None
         self.wall_list = None
         self.enemy_list = None
+        self.player_list = None
+
+        self.mouse_x = 1
+        self.mouse_y = 1
         
         # Lets us use relative file paths
         file_path = os.path.dirname(os.path.abspath(__file__))
@@ -63,6 +67,8 @@ class Game(arcade.Window):
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
         self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
+        self.player_triangle = arcade.Sprite("resources/images/player_arrow.png", SCALING)
+        self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
@@ -95,7 +101,11 @@ class Game(arcade.Window):
             self.all_sprites.append(wall_right)
         
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+        self.player_triangle.position = self.player.position
+        self.player_list.append(self.player)
         self.all_sprites.append(self.player)
+        self.player_list.append(self.player_triangle)
+        self.all_sprites.append(self.player_triangle)
 
         self.up_pressed = False
         self.down_pressed = False
@@ -167,6 +177,18 @@ class Game(arcade.Window):
         if self.player.right > SCREEN_WIDTH:
             self.player.right = SCREEN_WIDTH
         
+        self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly. I kind of like it wobbly. Needs to be uncommented even if you also use the line below.  
+        self.player_triangle.velocity = self.player.velocity        # This line uncommented makes it strict. 
+
+        diff1 = self.mouse_y - self.player_triangle.center_y
+        diff2 = self.mouse_x - self.player_triangle.center_x
+        if diff2 == 0:
+            diff2 = 1
+        angle = (180 / math.pi) * (math.atan(diff1 / diff2)) - 90
+        if diff2 < 0:
+            self.player_triangle.angle = angle + 180
+        else:
+            self.player_triangle.angle = angle
         # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
         self.all_sprites.update()
         self.enemy_list.update()
@@ -209,7 +231,8 @@ class Game(arcade.Window):
         # These two lines are two types of player motion based on the mouse. Uncomment to unlock the motion.
         # self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
         # self.player.position = (x, y)                                                       # Mouse Movement
-        pass
+        self.mouse_x = x
+        self.mouse_y = y
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         """
