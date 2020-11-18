@@ -120,11 +120,11 @@ class Game(arcade.Window):
         if self.player.right > SCREEN_WIDTH:
             self.player.right = SCREEN_WIDTH
         
-        self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly. I kind of like it wobbly.  
-        # self.player_triangle.velocity = self.player.velocity        # This line uncommented makes it strict. 
+        self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly. I kind of like it wobbly. Needs to be uncommented even if you also use the line below.  
+        self.player_triangle.velocity = self.player.velocity        # This line uncommented makes it strict. 
 
-        diff1 = self.mouse_y - self.player.center_y
-        diff2 = self.mouse_x - self.player.center_x
+        diff1 = self.mouse_y - self.player_triangle.center_y
+        diff2 = self.mouse_x - self.player_triangle.center_x
         if diff2 == 0:
             diff2 = 1
         angle = (180 / math.pi) * (math.atan(diff1 / diff2)) - 90
