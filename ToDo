@@ -16,6 +16,7 @@ Develop Beta:
 ---Be shot at
 -Bigger Arena with scrolling, make map files
 -Shooting out from player (constant or clicking?)
+---Do we want to make a function that calculates angles for us based on pixel positions?
 
 
 Think about for later:
