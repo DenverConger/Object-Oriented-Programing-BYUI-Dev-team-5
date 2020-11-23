@@ -1,0 +1,31 @@
+#enemies and ai for enemies
+#player and health
+#map/obstacles tiles and obstacle collision
+#item interaction and simple inventory
+
+#basics for game
+#1. player and enemies and collisions with enemy attacks and simple ai for enemies
+
+-----------------------------------------
+Alpha:
+Player cannnot move past walls
+
+Week 10:
+Develop Beta:
+-Interaction with Enemy and Player
+---Be shot at
+-Bigger Arena with scrolling, make map files
+-Shooting out from player (constant or clicking?)
+
+
+Think about for later:
+-Scrolling Screen
+---One big square arena, or multiple rooms that we change views from?
+---Scroll screen with player, or scroll with rooms?
+-Items
+-Inventory
+-Sword Attack
+-Boss Level
+-Longer you stay at level 1, the more enemies spawn. If you get too greedy, then you might get swarmed. 
+-Art
+-View
