@@ -9,6 +9,8 @@ import arcade
 import os
 import random
 import math
+from datetime import datetime, timedelta # For seeding random number generation.
+import sys
 
 SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
@@ -44,6 +46,15 @@ class EnemySprite(arcade.Sprite):
         if self.center_y < BOTTOM_LIMIT:
             self.center_y = BOTTOM_LIMIT
             self.change_y *= -1
+
+    def move_towards_player(self, player):
+        # Find direction vector (dx, dy) between enemy and player.
+        dx, dy = player.rect.x - self.rect.x, player.rect.y - self.rect.y
+        dist = math.hypot(dx, dy)
+        dx, dy = dx / dist, dy / dist  # Normalize.
+        # Move along this normalized vector towards the player at current speed.
+        self.rect.x += dx * self.speed
+        self.rect.y += dy * self.speed
 
 class Game(arcade.Window):
     def __init__(self):
@@ -199,15 +210,18 @@ class Game(arcade.Window):
         
         for enemy in self.enemy_list:
                 # If the enemy hit a wall, reverse
+                
+                
                 if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
                     enemy.change_x *= -1
+                    enemy.change_y *= -1
                 # If the enemy hit the left boundary, reverse
-                elif enemy.boundary_left is not None and enemy.left < enemy.boundary_left:
+                """elif enemy.boundary_left is not None and enemy.left < enemy.boundary_left:
                     enemy.change_x *= -1
                 # If the enemy hit the right boundary, reverse
                 elif enemy.boundary_right is not None and enemy.right > enemy.boundary_right:
                     enemy.change_x *= -1
-                """elif enemy.boundary_top is not None and enemy.top < enemy.boundary_top:
+                elif enemy.boundary_top is not None and enemy.top < enemy.boundary_top:
                     enemy.change_y *= -1
                 # If the enemy hit the right boundary, reverse
                 elif enemy.boundary_bottom is not None and enemy.bottom > enemy.boundary_bottom:
