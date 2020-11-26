@@ -22,7 +22,7 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-starting_enemy_count = 3
+starting_enemy_count = 10
 
 class EnemySprite(arcade.Sprite):
     """ Sprite that represents an enemy. """
@@ -150,8 +150,29 @@ class Game(arcade.Window):
 
             #self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
+        """
 
+Below is a failed attempt at getting the player to stop moving when it hits the wall.
+        """
+        """damping = 1.0
 
+        gravity = (0, 0)
+        self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
+                                                         gravity=gravity)
+
+        self.physics_engine.add_sprite(self.player,
+                                       mass=2,
+                                       moment=arcade.PymunkPhysicsEngine.MOMENT_INF,
+                                       collision_type="player",
+                                       max_horizontal_velocity=500,
+                                       max_vertical_velocity=500)
+
+        self.physics_engine.add_sprite_list(self.wall_list,
+                                            collision_type="wall",
+                                            body_type=arcade.PymunkPhysicsEngine.STATIC)
+"""
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
+                                                         self.wall_list)
     def on_draw(self):
         """
         Render the screen.
@@ -164,6 +185,7 @@ class Game(arcade.Window):
         self.all_sprites.draw()
         self.enemy_list.draw()
     def on_update(self, delta_time):
+        self.physics_engine.update()
         self.player.change_y = 0
         self.player.change_x = 0
 
@@ -215,6 +237,22 @@ class Game(arcade.Window):
                 if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
                     enemy.change_x *= -1
                     enemy.change_y *= -1
+
+        for enemy in self.enemy_list:
+                # If the enemy hits an enemy, reverse
+                
+                
+                if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
+                    enemy.change_x *= -1
+                    enemy.change_y *= -1
+        for player in self.player_list:
+                # If the enemy hits an enemy, reverse
+                
+                
+                if len(arcade.check_for_collision_with_list(player, self.wall_list)) > 0:
+                    player.change_x *= -1
+                    player.change_y *= -1
+
                 # If the enemy hit the left boundary, reverse
                 """elif enemy.boundary_left is not None and enemy.left < enemy.boundary_left:
                     enemy.change_x *= -1
@@ -235,7 +273,7 @@ class Game(arcade.Window):
         http://arcade.academy/arcade.key.html
         """
         if  key == arcade.key.SPACE:
-            bullet_sprite = TurningSprite(":resources:images/space_shooter/laserBlue01.png", SCALE)
+            bullet_sprite = (":resources:images/space_shooter/laserBlue01.png")
             bullet_sprite.guid = "Bullet"
 
             bullet_speed = 13
