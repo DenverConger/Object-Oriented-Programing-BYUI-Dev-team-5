@@ -23,9 +23,12 @@ RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
 starting_enemy_count = 10
-
+personality = "random"
 class EnemySprite(arcade.Sprite):
-    """ Sprite that represents an enemy. """
+    """ Sprite that represents an enemy. 
+        Denver - I plan on Adding a intelligence to the enemy
+        there is no documentation for it so 
+        i have to do it custom"""
 
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
@@ -34,6 +37,18 @@ class EnemySprite(arcade.Sprite):
     def update(self):
         """ Move the enemy around. """
         super().update()
+        #this calls from an unseen update class within arcade
+
+
+        """
+        my Idea is this would be the best spot
+        to figure out an enemy intelligence
+        I would have to add some conditionals such as
+        if the player is within 200 pixels than you activate
+        certain switches in the enemy to get it to do certain things
+        """
+
+
         if self.center_x < LEFT_LIMIT:
             self.center_x = LEFT_LIMIT
             self.change_x *= -1
@@ -47,14 +62,8 @@ class EnemySprite(arcade.Sprite):
             self.center_y = BOTTOM_LIMIT
             self.change_y *= -1
 
-    def move_towards_player(self, player):
-        # Find direction vector (dx, dy) between enemy and player.
-        dx, dy = player.rect.x - self.rect.x, player.rect.y - self.rect.y
-        dist = math.hypot(dx, dy)
-        dx, dy = dx / dist, dy / dist  # Normalize.
-        # Move along this normalized vector towards the player at current speed.
-        self.rect.x += dx * self.speed
-        self.rect.y += dy * self.speed
+
+
 
 class Game(arcade.Window):
     def __init__(self):
