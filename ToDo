@@ -1,17 +1,4 @@
 #enemies and ai for enemies
-"""
-Denver Conger's thoughts on enemies
-breakdown for enemy stuff
-Prob gonna use a simple state machine to get an enemy ai running
-
-in order to accomplish this the idea is to get a working enemy object on the screen. THan I plan on creating a few different
-states or controllers which are objects that can act and react depending on how we program it.
-classes needed to program for alpha
-
-
-enemy classes
-   which includes velicity conrol prob just to creep towards player
-"""
 #player and health
 #map/obstacles tiles and obstacle collision
 #item interaction and simple inventory
@@ -29,7 +16,6 @@ Develop Beta:
 ---Be shot at
 -Bigger Arena with scrolling, make map files
 -Shooting out from player (constant or clicking?)
--Start plan and thinking about classes
 
 
 Think about for later:

@@ -9,6 +9,8 @@ import arcade
 import os
 import random
 import math
+from datetime import datetime, timedelta # For seeding random number generation.
+import sys
 
 SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
@@ -20,10 +22,13 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-starting_enemy_count = 3
-
+starting_enemy_count = 10
+personality = "random"
 class EnemySprite(arcade.Sprite):
-    """ Sprite that represents an enemy. """
+    """ Sprite that represents an enemy. 
+        Denver - I plan on Adding a intelligence to the enemy
+        there is no documentation for it so 
+        i have to do it custom"""
 
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
@@ -32,6 +37,18 @@ class EnemySprite(arcade.Sprite):
     def update(self):
         """ Move the enemy around. """
         super().update()
+        #this calls from an unseen update class within arcade
+
+
+        """
+        my Idea is this would be the best spot
+        to figure out an enemy intelligence
+        I would have to add some conditionals such as
+        if the player is within 200 pixels than you activate
+        certain switches in the enemy to get it to do certain things
+        """
+
+
         if self.center_x < LEFT_LIMIT:
             self.center_x = LEFT_LIMIT
             self.change_x *= -1
@@ -44,6 +61,9 @@ class EnemySprite(arcade.Sprite):
         if self.center_y < BOTTOM_LIMIT:
             self.center_y = BOTTOM_LIMIT
             self.change_y *= -1
+
+
+
 
 class Game(arcade.Window):
     def __init__(self):
@@ -139,8 +159,29 @@ class Game(arcade.Window):
 
             #self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
+        """
 
+Below is a failed attempt at getting the player to stop moving when it hits the wall.
+        """
+        """damping = 1.0
 
+        gravity = (0, 0)
+        self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
+                                                         gravity=gravity)
+
+        self.physics_engine.add_sprite(self.player,
+                                       mass=2,
+                                       moment=arcade.PymunkPhysicsEngine.MOMENT_INF,
+                                       collision_type="player",
+                                       max_horizontal_velocity=500,
+                                       max_vertical_velocity=500)
+
+        self.physics_engine.add_sprite_list(self.wall_list,
+                                            collision_type="wall",
+                                            body_type=arcade.PymunkPhysicsEngine.STATIC)
+"""
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
+                                                         self.wall_list)
     def on_draw(self):
         """
         Render the screen.
@@ -153,6 +194,7 @@ class Game(arcade.Window):
         self.all_sprites.draw()
         self.enemy_list.draw()
     def on_update(self, delta_time):
+        self.physics_engine.update()
         self.player.change_y = 0
         self.player.change_x = 0
 
@@ -189,7 +231,6 @@ class Game(arcade.Window):
             self.player_triangle.angle = angle + 180
         else:
             self.player_triangle.angle = angle
-            
         # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
         self.all_sprites.update()
         self.enemy_list.update()
@@ -197,6 +238,41 @@ class Game(arcade.Window):
         enemies = arcade.check_for_collision_with_list(self.player, self.enemy_list)
         if len(enemies) > 0:
                 enemies[0].remove_from_sprite_lists()
+        
+        for enemy in self.enemy_list:
+                # If the enemy hit a wall, reverse
+                
+                
+                if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
+                    enemy.change_x *= -1
+                    enemy.change_y *= -1
+
+        for enemy in self.enemy_list:
+                # If the enemy hits an enemy, reverse
+                
+                
+                if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
+                    enemy.change_x *= -1
+                    enemy.change_y *= -1
+        for player in self.player_list:
+                # If the enemy hits an enemy, reverse
+                
+                
+                if len(arcade.check_for_collision_with_list(player, self.wall_list)) > 0:
+                    player.change_x *= -1
+                    player.change_y *= -1
+
+                # If the enemy hit the left boundary, reverse
+                """elif enemy.boundary_left is not None and enemy.left < enemy.boundary_left:
+                    enemy.change_x *= -1
+                # If the enemy hit the right boundary, reverse
+                elif enemy.boundary_right is not None and enemy.right > enemy.boundary_right:
+                    enemy.change_x *= -1
+                elif enemy.boundary_top is not None and enemy.top < enemy.boundary_top:
+                    enemy.change_y *= -1
+                # If the enemy hit the right boundary, reverse
+                elif enemy.boundary_bottom is not None and enemy.bottom > enemy.boundary_bottom:
+                    enemy.change_y *= -1"""
 
 
     def on_key_press(self, key, key_modifiers):
@@ -205,7 +281,24 @@ class Game(arcade.Window):
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
+        if  key == arcade.key.SPACE:
+            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
+            # bullet_sprite.guid = "Bullet"
 
+            bullet_speed = 13
+            bullet_sprite.change_y = \
+                math.cos(math.radians(self.player.angle)) * bullet_speed
+            bullet_sprite.change_x = \
+                -math.sin(math.radians(self.player.angle)) \
+                * bullet_speed
+
+            bullet_sprite.center_x = self.player.center_x
+            bullet_sprite.center_y = self.player.center_y
+            bullet_sprite.update()
+
+            self.bullet_list.append(bullet_sprite)
+
+            arcade.play_sound(self.laser_sound)
         if key == arcade.key.UP or key == arcade.key.W:
             self.up_pressed = True
         if key == arcade.key.DOWN or key == arcade.key.S:
