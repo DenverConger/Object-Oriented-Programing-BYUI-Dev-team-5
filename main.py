@@ -22,7 +22,7 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-starting_enemy_count = 10
+starting_enemy_count = 3
 personality = "random"
 
 class EnemySprite(arcade.Sprite):
@@ -41,8 +41,21 @@ class EnemySprite(arcade.Sprite):
         """ Move the enemy around. """
         super().update()
         #this calls from an unseen update class within arcade
+    def movement_enemy(self):
+        for i in range(starting_enemy_count):
+            image_no = random.randrange(4)
+            enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
 
+            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 64, TOP_LIMIT - 64)
+            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 64, RIGHT_LIMIT - 64)
 
+            enemy_sprite.change_x = random.random() * 2 
+            enemy_sprite.change_y = random.random() * 2 
+
+            enemy_sprite.size = 4
+
+            self.all_sprites.append(enemy_sprite)
+            self.enemy_list.append(enemy_sprite)
         """
         my Idea is this would be the best spot
         to figure out an enemy intelligence
@@ -50,20 +63,9 @@ class EnemySprite(arcade.Sprite):
         if the player is within 200 pixels then you activate
         certain switches in the enemy to get it to do certain things
         """
+        
 
 
-        if self.center_x < LEFT_LIMIT:
-            self.center_x = LEFT_LIMIT
-            self.change_x *= -1
-        if self.center_x > RIGHT_LIMIT:
-            self.center_x = RIGHT_LIMIT
-            self.change_x *= -1
-        if self.center_y > TOP_LIMIT:
-            self.center_y = TOP_LIMIT
-            self.change_y *= -1
-        if self.center_y < BOTTOM_LIMIT:
-            self.center_y = BOTTOM_LIMIT
-            self.change_y *= -1
 
 
 
@@ -143,42 +145,9 @@ class Game(arcade.Window):
 
 
         """ # Is this still an issue?
+        EnemySprite.movement_enemy(self)
 
-        for i in range(starting_enemy_count):
-            image_no = random.randrange(4)
-            enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
 
-            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 64, TOP_LIMIT - 64)
-            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 64, RIGHT_LIMIT - 64)
-
-            enemy_sprite.change_x = random.random() * 2 
-            enemy_sprite.change_y = random.random() * 2 
-
-            enemy_sprite.size = 4
-
-            self.all_sprites.append(enemy_sprite)
-            self.enemy_list.append(enemy_sprite)
-        """
-
-Below is a failed attempt at getting the player to stop moving when it hits the wall.
-        """
-        """damping = 1.0
-
-        gravity = (0, 0)
-        self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
-                                                         gravity=gravity)
-
-        self.physics_engine.add_sprite(self.player,
-                                       mass=2,
-                                       moment=arcade.PymunkPhysicsEngine.MOMENT_INF,
-                                       collision_type="player",
-                                       max_horizontal_velocity=500,
-                                       max_vertical_velocity=500)
-
-        self.physics_engine.add_sprite_list(self.wall_list,
-                                            collision_type="wall",
-                                            body_type=arcade.PymunkPhysicsEngine.STATIC)
-"""
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                          self.wall_list)
     def on_draw(self):
