@@ -18,17 +18,20 @@ SCREEN_TITLE = "Arena"
 SCALING = 0.5
 MOVEMENT_SPEED = 10
 OFFSCREEN_SPACE = 300
-LEFT_LIMIT = 0
+LEFT_LIMIT = 0 
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
 starting_enemy_count = 10
 personality = "random"
+
 class EnemySprite(arcade.Sprite):
     """ Sprite that represents an enemy. 
         Denver - I plan on Adding a intelligence to the enemy
         there is no documentation for it so 
         i have to do it custom"""
+
+        # """Kyler: Could we add all of enemy's behaviors into this class?"""
 
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
@@ -44,7 +47,7 @@ class EnemySprite(arcade.Sprite):
         my Idea is this would be the best spot
         to figure out an enemy intelligence
         I would have to add some conditionals such as
-        if the player is within 200 pixels than you activate
+        if the player is within 200 pixels then you activate
         certain switches in the enemy to get it to do certain things
         """
 
@@ -94,7 +97,7 @@ class Game(arcade.Window):
         self.enemy_list = arcade.SpriteList()
         wall_img = ":resources:images/tiles/brickBrown.png"
         
-
+# Summoning Walls       Kyler: Could we add this into a wall class maybe? Or is that not worth it? maybe Not.
         for x in range(32, SCREEN_WIDTH, 64):
             wall_top = arcade.Sprite(wall_img, SCALING)
             wall_top.center_x = x
@@ -134,30 +137,26 @@ class Game(arcade.Window):
 
         """
 
-
-
         Having an issue trying to figure out how to make enemy_sprite global 
         so it can be used betetr in collision detection against walls
         for lines below when used in on_update for collisions
 
 
+        """ # Is this still an issue?
 
-
-        """
         for i in range(starting_enemy_count):
             image_no = random.randrange(4)
             enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
 
-            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT, TOP_LIMIT)
-            enemy_sprite.center_x = random.randrange(LEFT_LIMIT, RIGHT_LIMIT)
+            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 64, TOP_LIMIT - 64)
+            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 64, RIGHT_LIMIT - 64)
 
-            enemy_sprite.change_x = random.random() * 2 - 1
-            enemy_sprite.change_y = random.random() * 2 - 1
-
+            enemy_sprite.change_x = random.random() * 2 
+            enemy_sprite.change_y = random.random() * 2 
 
             enemy_sprite.size = 4
 
-            #self.all_sprites.append(enemy_sprite)
+            self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
         """
 
@@ -193,6 +192,7 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
         self.enemy_list.draw()
+
     def on_update(self, delta_time):
         self.physics_engine.update()
         self.player.change_y = 0
@@ -231,6 +231,7 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
             self.player_triangle.angle = angle + 180
         else:
             self.player_triangle.angle = angle
+
         # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
         self.all_sprites.update()
         self.enemy_list.update()
@@ -299,6 +300,8 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
             self.bullet_list.append(bullet_sprite)
 
             arcade.play_sound(self.laser_sound)
+
+
         if key == arcade.key.UP or key == arcade.key.W:
             self.up_pressed = True
         if key == arcade.key.DOWN or key == arcade.key.S:
