@@ -282,18 +282,18 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         http://arcade.academy/arcade.key.html
         """
         if  key == arcade.key.SPACE:
-            bullet_sprite = (":resources:images/space_shooter/laserBlue01.png")
-            bullet_sprite.guid = "Bullet"
+            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
+            # bullet_sprite.guid = "Bullet"
 
             bullet_speed = 13
             bullet_sprite.change_y = \
-                math.cos(math.radians(self.player_sprite.angle)) * bullet_speed
+                math.cos(math.radians(self.player.angle)) * bullet_speed
             bullet_sprite.change_x = \
-                -math.sin(math.radians(self.player_sprite.angle)) \
+                -math.sin(math.radians(self.player.angle)) \
                 * bullet_speed
 
-            bullet_sprite.center_x = self.player_sprite.center_x
-            bullet_sprite.center_y = self.player_sprite.center_y
+            bullet_sprite.center_x = self.player.center_x
+            bullet_sprite.center_y = self.player.center_y
             bullet_sprite.update()
 
             self.bullet_list.append(bullet_sprite)
