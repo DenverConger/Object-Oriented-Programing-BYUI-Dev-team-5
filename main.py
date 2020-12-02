@@ -227,14 +227,14 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         # If you press both up and down, you can move the player right, but not left. If you press right and left, you can move the player down, but not up.
 
         # Hitting Edges of Screen
-        if self.player.top > SCREEN_HEIGHT:
-            self.player.top = SCREEN_HEIGHT
-        if self.player.bottom < 0:
-            self.player.bottom = 0
-        if self.player.left < 0:
-            self.player.left = 0
-        if self.player.right > SCREEN_WIDTH:
-            self.player.right = SCREEN_WIDTH
+        # if self.player.top > SCREEN_HEIGHT:
+        #     self.player.top = SCREEN_HEIGHT
+        # if self.player.bottom < 0:
+        #     self.player.bottom = 0
+        # if self.player.left < 0:
+        #     self.player.left = 0
+        # if self.player.right > SCREEN_WIDTH:
+        #     self.player.right = SCREEN_WIDTH
         
         self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly. I kind of like it wobbly. Needs to be uncommented even if you also use the line below.  
         self.player_triangle.velocity = self.player.velocity        # This line uncommented makes it strict. 
