@@ -18,8 +18,10 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
+SPRITE_SPEED = 5    
 starting_enemy_count = 10
 personality = "random"
+
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
@@ -156,37 +158,6 @@ class Game(arcade.Window):
         self.player.center_y = 50
         self.bullets = Bullets()
         
-
-
-        for x in range(32, SCREEN_WIDTH * 5, 64):
-
-        
-        # Summoning Walls
-        """for x in range(32, SCREEN_WIDTH, 64):
-            wall_top = arcade.Sprite(wall_img, SCALING)
-            wall_top.center_x = x
-            wall_top.center_y = SCREEN_HEIGHT * 5 - 32
-            self.wall_list.append(wall_top)
-            self.all_sprites.append(wall_top)
-
-            wall_bottom = arcade.Sprite(wall_img, SCALING)
-            wall_bottom.center_x = x
-            wall_bottom.center_y = 32
-            self.wall_list.append(wall_bottom)
-            self.all_sprites.append(wall_bottom)
-            
-        for y in range(96, SCREEN_HEIGHT * 5, 64):
-            wall_left = arcade.Sprite(wall_img, SCALING)
-            wall_left.center_y = y
-            wall_left.center_x = 32
-            self.wall_list.append(wall_left)
-            self.all_sprites.append(wall_left)
-
-            wall_right = arcade.Sprite(wall_img, SCALING)
-            wall_right.center_y = y
-            wall_right.center_x = SCREEN_WIDTH * 5 - 32
-            self.wall_list.append(wall_right)
-            self.all_sprites.append(wall_right)"""
         
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.player_triangle.position = self.player.position
@@ -251,7 +222,7 @@ class Game(arcade.Window):
 
         self.player.change_y = 0
         self.player.change_x = 0
-        playa = 0
+
 
 
         for enemy in self.enemy_list:
