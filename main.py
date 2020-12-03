@@ -1,9 +1,5 @@
 """
-Starting Template
-Once you have learned how to use classes, you can begin your program with this
-template.
-If Python and Arcade are installed, this example can be run from the command line with:
-python -m arcade.examples.starting_template
+This is our game
 """
 import arcade
 import os
@@ -22,8 +18,9 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-starting_enemy_count = 10
+starting_enemy_count = 30
 personality = "random"
+SPRITE_SPEED = 0.5
 
 class EnemySprite(arcade.Sprite):
     """ Sprite that represents an enemy. 
@@ -37,34 +34,19 @@ class EnemySprite(arcade.Sprite):
         super().__init__(image_file_name, scale=scale)
         self.size = 0
 
-    def update(self):
-        """ Move the enemy around. """
-        super().update()
-        #this calls from an unseen update class within arcade
 
 
-        """
-        my Idea is this would be the best spot
-        to figure out an enemy intelligence
-        I would have to add some conditionals such as
-        if the player is within 200 pixels then you activate
-        certain switches in the enemy to get it to do certain things
-        """
+    def movement(self, player, enemy):
 
-
-        if self.center_x < LEFT_LIMIT:
-            self.center_x = LEFT_LIMIT
-            self.change_x *= -1
-        if self.center_x > RIGHT_LIMIT:
-            self.center_x = RIGHT_LIMIT
-            self.change_x *= -1
-        if self.center_y > TOP_LIMIT:
-            self.center_y = TOP_LIMIT
-            self.change_y *= -1
-        if self.center_y < BOTTOM_LIMIT:
-            self.center_y = BOTTOM_LIMIT
-            self.change_y *= -1
-
+            if enemy.center_y < player.center_y:
+                enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
+            elif enemy.center_y > player.center_y:
+                enemy.center_y -= min(SPRITE_SPEED, enemy.center_y - player.center_y)
+            if enemy.center_x < player.center_x:
+                enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
+            elif enemy.center_x > player.center_x:
+                enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
+            
 
 class Game(arcade.Window):
     def __init__(self):
@@ -77,7 +59,7 @@ class Game(arcade.Window):
         self.wall_list = None
         self.enemy_list = None
         self.player_list = None
-
+        self.player = None
         self.mouse_x = 1
         self.mouse_y = 1
         
@@ -94,6 +76,10 @@ class Game(arcade.Window):
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         wall_img = ":resources:images/tiles/brickBrown.png"
+        self.player.center_x = 50
+        self.player.center_y = 50
+
+        
         
         # Summoning Walls
         """for x in range(32, SCREEN_WIDTH, 64):
@@ -140,13 +126,8 @@ class Game(arcade.Window):
             image_no = random.randrange(4)
             enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
 
-            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 64, TOP_LIMIT - 64)
-            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 64, RIGHT_LIMIT - 64)
-
-            enemy_sprite.change_x = random.random() * 2 
-            enemy_sprite.change_y = random.random() * 2 
-
-            enemy_sprite.size = 4
+            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
+            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
 
             self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
@@ -183,6 +164,13 @@ class Game(arcade.Window):
         self.wall_physics.update()
         self.player.change_y = 0
         self.player.change_x = 0
+        playa = 0
+
+
+        for enemy in self.enemy_list:
+            
+            EnemySprite.movement(self, self.player, enemy)
+
 
         # Keyboard Movement
         if self.up_pressed and not self.down_pressed:
@@ -236,7 +224,6 @@ class Game(arcade.Window):
                 if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
                     enemy.change_x *= -1
                     enemy.change_y *= -1
-        
 
 
     def on_key_press(self, key, key_modifiers):
