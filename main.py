@@ -147,7 +147,7 @@ class Game(arcade.Window):
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
-        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
+        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING, hit_box_algorithm = 'None')
         self.player_triangle = arcade.Sprite("resources/images/player_arrow.png", SCALING)
         self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
@@ -210,10 +210,12 @@ class Game(arcade.Window):
         self.background_list.draw()
         self.floor_list.draw()
         self.wall_list.draw()
+        self.wall_list.draw_hit_boxes()
         self.bullets.draw()
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
+        self.player.draw_hit_box()
         self.enemy_list.draw()
 
     def on_update(self, delta_time):
