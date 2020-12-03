@@ -1,9 +1,5 @@
 """
-Starting Template
-Once you have learned how to use classes, you can begin your program with this
-template.
-If Python and Arcade are installed, this example can be run from the command line with:
-python -m arcade.examples.starting_template
+This is our game
 """
 import arcade
 import os
@@ -22,7 +18,7 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-starting_enemy_count = 3
+starting_enemy_count = 30
 personality = "random"
 SPRITE_SPEED = 0.5
 
@@ -40,16 +36,16 @@ class EnemySprite(arcade.Sprite):
 
 
 
-    def movement(self, player):
+    def movement(self, player, enemy):
 
-            if self.center_y < player.center_y:
-                self.center_y += min(SPRITE_SPEED, player.center_y - self.center_y)
-            elif self.center_y > player.center_y:
-                self.center_y -= min(SPRITE_SPEED, self.center_y - player.center_y)
-            if self.center_x < player.center_x:
-                self.center_x += min(SPRITE_SPEED, player.center_x - self.center_x)
-            elif self.center_x > player.center_x:
-                self.center_x -= min(SPRITE_SPEED, self.center_x - player.center_x)
+            if enemy.center_y < player.center_y:
+                enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
+            elif enemy.center_y > player.center_y:
+                enemy.center_y -= min(SPRITE_SPEED, enemy.center_y - player.center_y)
+            if enemy.center_x < player.center_x:
+                enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
+            elif enemy.center_x > player.center_x:
+                enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
             
 
 class Game(arcade.Window):
@@ -82,6 +78,8 @@ class Game(arcade.Window):
         wall_img = ":resources:images/tiles/brickBrown.png"
         self.player.center_x = 50
         self.player.center_y = 50
+
+        
         
 # Summoning Walls       Kyler: Could we add this into a wall class maybe? Or is that not worth it? maybe Not.
         for x in range(32, SCREEN_WIDTH, 64):
@@ -121,14 +119,6 @@ class Game(arcade.Window):
         self.right_pressed = False
         self.left_pressed = False
 
-        """
-
-        Having an issue trying to figure out how to make enemy_sprite global 
-        so it can be used betetr in collision detection against walls
-        for lines below when used in on_update for collisions
-
-
-        """ # Is this still an issue?
 
         for i in range(starting_enemy_count):
             image_no = random.randrange(4)
@@ -140,9 +130,10 @@ class Game(arcade.Window):
             self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
 
-
+        
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                          self.wall_list)
+                                                         
     def on_draw(self):
         """
         Render the screen.
@@ -163,7 +154,8 @@ class Game(arcade.Window):
 
 
         for enemy in self.enemy_list:
-            EnemySprite.movement(self, self.player)
+            
+            EnemySprite.movement(self, self.player, enemy)
 
 
         # Keyboard Movement
@@ -231,17 +223,6 @@ class Game(arcade.Window):
                     player.change_x *= -1
                     player.change_y *= -1
 
-                # If the enemy hit the left boundary, reverse
-                """elif enemy.boundary_left is not None and enemy.left < enemy.boundary_left:
-                    enemy.change_x *= -1
-                # If the enemy hit the right boundary, reverse
-                elif enemy.boundary_right is not None and enemy.right > enemy.boundary_right:
-                    enemy.change_x *= -1
-                elif enemy.boundary_top is not None and enemy.top < enemy.boundary_top:
-                    enemy.change_y *= -1
-                # If the enemy hit the right boundary, reverse
-                elif enemy.boundary_bottom is not None and enemy.bottom > enemy.boundary_bottom:
-                    enemy.change_y *= -1"""
 
 
     def on_key_press(self, key, key_modifiers):
@@ -250,24 +231,6 @@ class Game(arcade.Window):
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
-        if  key == arcade.key.SPACE:
-            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
-            # bullet_sprite.guid = "Bullet"
-
-            bullet_speed = 13
-            bullet_sprite.change_y = \
-                math.cos(math.radians(self.player.angle)) * bullet_speed
-            bullet_sprite.change_x = \
-                -math.sin(math.radians(self.player.angle)) \
-                * bullet_speed
-
-            bullet_sprite.center_x = self.player.center_x
-            bullet_sprite.center_y = self.player.center_y
-            bullet_sprite.update()
-
-            self.bullet_list.append(bullet_sprite)
-
-            arcade.play_sound(self.laser_sound)
 
 
         if key == arcade.key.UP or key == arcade.key.W:
