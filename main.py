@@ -46,8 +46,35 @@ class EnemySprite(arcade.Sprite):
                 enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
             elif enemy.center_x > player.center_x:
                 enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
-            
 
+class Bullets():
+
+    def __init__(self):
+        self.bullet_list = arcade.SpriteList()
+        self.bullet_speed = 50
+        self.bullet_sprite = ":resources:images/space_shooter/laserBlue01.png"
+    
+    def create_bullet(self, mouse_x, mouse_y, player_x, player_y):
+        self.bullet = arcade.Sprite(self.bullet_sprite)
+        self.bullet.position = (player_x, player_y)
+
+        diff_x = mouse_x - player_x 
+        diff_y = mouse_y - player_y
+        bullet_angle = math.atan2(diff_y, diff_x)
+
+        self.bullet.velocity = (math.cos(bullet_angle) * self.bullet_speed, math.sin(bullet_angle) * self.bullet_speed)
+        self.bullet.radians = bullet_angle
+
+        self.bullet_list.append(self.bullet)
+
+    def draw(self):
+        self.bullet_list.draw()
+
+    def update(self):
+        self.bullet_list.update()
+        
+        
+        
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
@@ -78,7 +105,7 @@ class Game(arcade.Window):
         wall_img = ":resources:images/tiles/brickBrown.png"
         self.player.center_x = 50
         self.player.center_y = 50
-
+        self.bullets = Bullets()
         
         
         # Summoning Walls
@@ -154,6 +181,7 @@ class Game(arcade.Window):
         self.background_list.draw()
         self.floor_list.draw()
         self.wall_list.draw()
+        self.bullets.draw()
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
@@ -224,7 +252,7 @@ class Game(arcade.Window):
                 if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
                     enemy.change_x *= -1
                     enemy.change_y *= -1
-
+        self.bullets.update()
 
     def on_key_press(self, key, key_modifiers):
         """
@@ -266,7 +294,7 @@ class Game(arcade.Window):
         """
         Called when the user presses a mouse button.
         """
-        pass
+        self.bullets.create_bullet(x, y, self.player.center_x, self.player.center_y)
 
     def on_mouse_release(self, x, y, button, key_modifiers):
         """
