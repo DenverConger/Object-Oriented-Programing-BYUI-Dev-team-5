@@ -24,6 +24,7 @@ BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
 starting_enemy_count = 3
 personality = "random"
+SPRITE_SPEED = 0.5
 
 class EnemySprite(arcade.Sprite):
     """ Sprite that represents an enemy. 
@@ -37,38 +38,19 @@ class EnemySprite(arcade.Sprite):
         super().__init__(image_file_name, scale=scale)
         self.size = 0
 
-    def update(self):
-        """ Move the enemy around. """
-        super().update()
-        #this calls from an unseen update class within arcade
-    def movement_enemy(self):
-        for i in range(starting_enemy_count):
-            image_no = random.randrange(4)
-            enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
-
-            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 64, TOP_LIMIT - 64)
-            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 64, RIGHT_LIMIT - 64)
-
-            enemy_sprite.change_x = random.random() * 2 
-            enemy_sprite.change_y = random.random() * 2 
-
-            enemy_sprite.size = 4
-
-            self.all_sprites.append(enemy_sprite)
-            self.enemy_list.append(enemy_sprite)
-        """
-        my Idea is this would be the best spot
-        to figure out an enemy intelligence
-        I would have to add some conditionals such as
-        if the player is within 200 pixels then you activate
-        certain switches in the enemy to get it to do certain things
-        """
-        
 
 
+    def movement(self, player):
 
-
-
+            if self.center_y < player.center_y:
+                self.center_y += min(SPRITE_SPEED, player.center_y - self.center_y)
+            elif self.center_y > player.center_y:
+                self.center_y -= min(SPRITE_SPEED, self.center_y - player.center_y)
+            if self.center_x < player.center_x:
+                self.center_x += min(SPRITE_SPEED, player.center_x - self.center_x)
+            elif self.center_x > player.center_x:
+                self.center_x -= min(SPRITE_SPEED, self.center_x - player.center_x)
+            
 
 class Game(arcade.Window):
     def __init__(self):
@@ -81,7 +63,7 @@ class Game(arcade.Window):
         self.wall_list = None
         self.enemy_list = None
         self.player_list = None
-
+        self.player = None
         self.mouse_x = 1
         self.mouse_y = 1
         
@@ -98,6 +80,8 @@ class Game(arcade.Window):
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         wall_img = ":resources:images/tiles/brickBrown.png"
+        self.player.center_x = 50
+        self.player.center_y = 50
         
 # Summoning Walls       Kyler: Could we add this into a wall class maybe? Or is that not worth it? maybe Not.
         for x in range(32, SCREEN_WIDTH, 64):
@@ -145,7 +129,16 @@ class Game(arcade.Window):
 
 
         """ # Is this still an issue?
-        EnemySprite.movement_enemy(self)
+
+        for i in range(starting_enemy_count):
+            image_no = random.randrange(4)
+            enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
+
+            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
+            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
+
+            self.all_sprites.append(enemy_sprite)
+            self.enemy_list.append(enemy_sprite)
 
 
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
@@ -166,6 +159,12 @@ class Game(arcade.Window):
         self.physics_engine.update()
         self.player.change_y = 0
         self.player.change_x = 0
+        playa = 0
+
+
+        for enemy in self.enemy_list:
+            EnemySprite.movement(self, self.player)
+
 
         # Keyboard Movement
         if self.up_pressed and not self.down_pressed:
