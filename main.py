@@ -1,9 +1,5 @@
 """
-Starting Template
-Once you have learned how to use classes, you can begin your program with this
-template.
-If Python and Arcade are installed, this example can be run from the command line with:
-python -m arcade.examples.starting_template
+This is our game
 """
 import arcade
 import os
@@ -18,52 +14,39 @@ SCREEN_TITLE = "Arena"
 SCALING = 0.5
 MOVEMENT_SPEED = 10
 OFFSCREEN_SPACE = 300
-LEFT_LIMIT = 0
+LEFT_LIMIT = 0 
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-starting_enemy_count = 10
+starting_enemy_count = 30
 personality = "random"
+SPRITE_SPEED = 0.5
+
 class EnemySprite(arcade.Sprite):
     """ Sprite that represents an enemy. 
         Denver - I plan on Adding a intelligence to the enemy
         there is no documentation for it so 
         i have to do it custom"""
 
+        # """Kyler: Could we add all of enemy's behaviors into this class?"""
+
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
         self.size = 0
 
-    def update(self):
-        """ Move the enemy around. """
-        super().update()
-        #this calls from an unseen update class within arcade
 
 
-        """
-        my Idea is this would be the best spot
-        to figure out an enemy intelligence
-        I would have to add some conditionals such as
-        if the player is within 200 pixels than you activate
-        certain switches in the enemy to get it to do certain things
-        """
+    def movement(self, player, enemy):
 
-
-        if self.center_x < LEFT_LIMIT:
-            self.center_x = LEFT_LIMIT
-            self.change_x *= -1
-        if self.center_x > RIGHT_LIMIT:
-            self.center_x = RIGHT_LIMIT
-            self.change_x *= -1
-        if self.center_y > TOP_LIMIT:
-            self.center_y = TOP_LIMIT
-            self.change_y *= -1
-        if self.center_y < BOTTOM_LIMIT:
-            self.center_y = BOTTOM_LIMIT
-            self.change_y *= -1
-
-
-
+            if enemy.center_y < player.center_y:
+                enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
+            elif enemy.center_y > player.center_y:
+                enemy.center_y -= min(SPRITE_SPEED, enemy.center_y - player.center_y)
+            if enemy.center_x < player.center_x:
+                enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
+            elif enemy.center_x > player.center_x:
+                enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
+            
 
 class Game(arcade.Window):
     def __init__(self):
@@ -76,7 +59,7 @@ class Game(arcade.Window):
         self.wall_list = None
         self.enemy_list = None
         self.player_list = None
-
+        self.player = None
         self.mouse_x = 1
         self.mouse_y = 1
         
@@ -93,8 +76,12 @@ class Game(arcade.Window):
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         wall_img = ":resources:images/tiles/brickBrown.png"
-        
+        self.player.center_x = 50
+        self.player.center_y = 50
 
+        
+        
+# Summoning Walls       Kyler: Could we add this into a wall class maybe? Or is that not worth it? maybe Not.
         for x in range(32, SCREEN_WIDTH, 64):
             wall_top = arcade.Sprite(wall_img, SCALING)
             wall_top.center_x = x
@@ -132,56 +119,21 @@ class Game(arcade.Window):
         self.right_pressed = False
         self.left_pressed = False
 
-        """
 
-
-
-        Having an issue trying to figure out how to make enemy_sprite global 
-        so it can be used betetr in collision detection against walls
-        for lines below when used in on_update for collisions
-
-
-
-
-        """
         for i in range(starting_enemy_count):
             image_no = random.randrange(4)
             enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
 
-            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT, TOP_LIMIT)
-            enemy_sprite.center_x = random.randrange(LEFT_LIMIT, RIGHT_LIMIT)
+            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
+            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
 
-            enemy_sprite.change_x = random.random() * 2 - 1
-            enemy_sprite.change_y = random.random() * 2 - 1
-
-
-            enemy_sprite.size = 4
-
-            #self.all_sprites.append(enemy_sprite)
+            self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
-        """
 
-Below is a failed attempt at getting the player to stop moving when it hits the wall.
-        """
-        """damping = 1.0
-
-        gravity = (0, 0)
-        self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
-                                                         gravity=gravity)
-
-        self.physics_engine.add_sprite(self.player,
-                                       mass=2,
-                                       moment=arcade.PymunkPhysicsEngine.MOMENT_INF,
-                                       collision_type="player",
-                                       max_horizontal_velocity=500,
-                                       max_vertical_velocity=500)
-
-        self.physics_engine.add_sprite_list(self.wall_list,
-                                            collision_type="wall",
-                                            body_type=arcade.PymunkPhysicsEngine.STATIC)
-"""
+        
         self.physics_engine = arcade.PhysicsEngineSimple(self.player,
                                                          self.wall_list)
+                                                         
     def on_draw(self):
         """
         Render the screen.
@@ -193,10 +145,18 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
         self.enemy_list.draw()
+
     def on_update(self, delta_time):
         self.physics_engine.update()
         self.player.change_y = 0
         self.player.change_x = 0
+        playa = 0
+
+
+        for enemy in self.enemy_list:
+            
+            EnemySprite.movement(self, self.player, enemy)
+
 
         # Keyboard Movement
         if self.up_pressed and not self.down_pressed:
@@ -231,6 +191,7 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
             self.player_triangle.angle = angle + 180
         else:
             self.player_triangle.angle = angle
+
         # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
         self.all_sprites.update()
         self.enemy_list.update()
@@ -262,17 +223,6 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
                     player.change_x *= -1
                     player.change_y *= -1
 
-                # If the enemy hit the left boundary, reverse
-                """elif enemy.boundary_left is not None and enemy.left < enemy.boundary_left:
-                    enemy.change_x *= -1
-                # If the enemy hit the right boundary, reverse
-                elif enemy.boundary_right is not None and enemy.right > enemy.boundary_right:
-                    enemy.change_x *= -1
-                elif enemy.boundary_top is not None and enemy.top < enemy.boundary_top:
-                    enemy.change_y *= -1
-                # If the enemy hit the right boundary, reverse
-                elif enemy.boundary_bottom is not None and enemy.bottom > enemy.boundary_bottom:
-                    enemy.change_y *= -1"""
 
 
     def on_key_press(self, key, key_modifiers):
@@ -281,24 +231,8 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
-        if  key == arcade.key.SPACE:
-            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
-            # bullet_sprite.guid = "Bullet"
 
-            bullet_speed = 13
-            bullet_sprite.change_y = \
-                math.cos(math.radians(self.player.angle)) * bullet_speed
-            bullet_sprite.change_x = \
-                -math.sin(math.radians(self.player.angle)) \
-                * bullet_speed
 
-            bullet_sprite.center_x = self.player.center_x
-            bullet_sprite.center_y = self.player.center_y
-            bullet_sprite.update()
-
-            self.bullet_list.append(bullet_sprite)
-
-            arcade.play_sound(self.laser_sound)
         if key == arcade.key.UP or key == arcade.key.W:
             self.up_pressed = True
         if key == arcade.key.DOWN or key == arcade.key.S:
