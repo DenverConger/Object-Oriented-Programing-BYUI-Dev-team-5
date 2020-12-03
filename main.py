@@ -190,7 +190,7 @@ class Game(arcade.Window):
             self.enemy_list.append(enemy_sprite)
     
     def load_map(self, map):
-        map = arcade.tilemap.read_tmx('resources/maps/map1.tmx')
+        map = arcade.tilemap.read_tmx('resources/maps/map0.tmx')
 
         self.wall_list = arcade.tilemap.process_layer(map, 'Walls', 2)
         self.floor_list = arcade.tilemap.process_layer(map, 'Floor', 2)
