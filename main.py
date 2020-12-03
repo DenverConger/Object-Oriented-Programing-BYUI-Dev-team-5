@@ -66,8 +66,6 @@ class EnemySprite(arcade.Sprite):
             self.change_y *= -1
 
 
-
-
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
@@ -97,8 +95,8 @@ class Game(arcade.Window):
         self.enemy_list = arcade.SpriteList()
         wall_img = ":resources:images/tiles/brickBrown.png"
         
-# Summoning Walls       Kyler: Could we add this into a wall class maybe? Or is that not worth it? maybe Not.
-        for x in range(32, SCREEN_WIDTH, 64):
+        # Summoning Walls
+        """for x in range(32, SCREEN_WIDTH, 64):
             wall_top = arcade.Sprite(wall_img, SCALING)
             wall_top.center_x = x
             wall_top.center_y = SCREEN_HEIGHT - 32
@@ -121,7 +119,7 @@ class Game(arcade.Window):
             wall_right.center_y = y
             wall_right.center_x = SCREEN_WIDTH - 32
             self.wall_list.append(wall_right)
-            self.all_sprites.append(wall_right)
+            self.all_sprites.append(wall_right)"""
         
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.player_triangle.position = self.player.position
@@ -135,14 +133,8 @@ class Game(arcade.Window):
         self.right_pressed = False
         self.left_pressed = False
 
-        """
-
-        Having an issue trying to figure out how to make enemy_sprite global 
-        so it can be used betetr in collision detection against walls
-        for lines below when used in on_update for collisions
-
-
-        """ # Is this still an issue?
+        self.current_map = None
+        self.load_map(self.current_map)
 
         for i in range(starting_enemy_count):
             image_no = random.randrange(4)
@@ -158,29 +150,17 @@ class Game(arcade.Window):
 
             self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
-        """
+    
+    def load_map(self, map):
+        map = arcade.tilemap.read_tmx('resources/maps/map1.tmx')
 
-Below is a failed attempt at getting the player to stop moving when it hits the wall.
-        """
-        """damping = 1.0
+        self.wall_list = arcade.tilemap.process_layer(map, 'Walls', 2)
+        self.floor_list = arcade.tilemap.process_layer(map, 'Floor', 2)
+        self.background_list = arcade.tilemap.process_layer(map, 'Ground', 2)
+        
+        self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)
 
-        gravity = (0, 0)
-        self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
-                                                         gravity=gravity)
-
-        self.physics_engine.add_sprite(self.player,
-                                       mass=2,
-                                       moment=arcade.PymunkPhysicsEngine.MOMENT_INF,
-                                       collision_type="player",
-                                       max_horizontal_velocity=500,
-                                       max_vertical_velocity=500)
-
-        self.physics_engine.add_sprite_list(self.wall_list,
-                                            collision_type="wall",
-                                            body_type=arcade.PymunkPhysicsEngine.STATIC)
-"""
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player,
-                                                         self.wall_list)
+    
     def on_draw(self):
         """
         Render the screen.
@@ -189,12 +169,18 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         # the screen to the background color, and erase what we drew last frame.
         arcade.start_render()
 
+        # Drawing map lists
+        self.background_list.draw()
+        self.floor_list.draw()
+        self.wall_list.draw()
+
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
         self.enemy_list.draw()
 
     def on_update(self, delta_time):
-        self.physics_engine.update()
+        # self.physics_engine.update()
+        self.wall_physics.update()
         self.player.change_y = 0
         self.player.change_x = 0
 
@@ -242,38 +228,15 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         
         for enemy in self.enemy_list:
                 # If the enemy hit a wall, reverse
-                
-                
                 if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
                     enemy.change_x *= -1
                     enemy.change_y *= -1
-
         for enemy in self.enemy_list:
                 # If the enemy hits an enemy, reverse
-                
-                
                 if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
                     enemy.change_x *= -1
                     enemy.change_y *= -1
-        for player in self.player_list:
-                # If the enemy hits an enemy, reverse
-                
-                
-                if len(arcade.check_for_collision_with_list(player, self.wall_list)) > 0:
-                    player.change_x *= -1
-                    player.change_y *= -1
-
-                # If the enemy hit the left boundary, reverse
-                """elif enemy.boundary_left is not None and enemy.left < enemy.boundary_left:
-                    enemy.change_x *= -1
-                # If the enemy hit the right boundary, reverse
-                elif enemy.boundary_right is not None and enemy.right > enemy.boundary_right:
-                    enemy.change_x *= -1
-                elif enemy.boundary_top is not None and enemy.top < enemy.boundary_top:
-                    enemy.change_y *= -1
-                # If the enemy hit the right boundary, reverse
-                elif enemy.boundary_bottom is not None and enemy.bottom > enemy.boundary_bottom:
-                    enemy.change_y *= -1"""
+        
 
 
     def on_key_press(self, key, key_modifiers):
@@ -282,25 +245,6 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
-        if  key == arcade.key.SPACE:
-            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
-            # bullet_sprite.guid = "Bullet"
-
-            bullet_speed = 13
-            bullet_sprite.change_y = \
-                math.cos(math.radians(self.player.angle)) * bullet_speed
-            bullet_sprite.change_x = \
-                -math.sin(math.radians(self.player.angle)) \
-                * bullet_speed
-
-            bullet_sprite.center_x = self.player.center_x
-            bullet_sprite.center_y = self.player.center_y
-            bullet_sprite.update()
-
-            self.bullet_list.append(bullet_sprite)
-
-            arcade.play_sound(self.laser_sound)
-
 
         if key == arcade.key.UP or key == arcade.key.W:
             self.up_pressed = True
