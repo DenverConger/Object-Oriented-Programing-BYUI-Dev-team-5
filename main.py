@@ -383,8 +383,8 @@ Below is a failed attempt at getting the player to stop moving when it hits the 
         # These two lines are two types of player motion based on the mouse. Uncomment to unlock the motion.
         # self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
         # self.player.position = (x, y)                                                       # Mouse Movement
-        self.mouse_x = x
-        self.mouse_y = y
+        self.mouse_x = x + self.view_left
+        self.mouse_y = y + self.view_bottom
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         """
