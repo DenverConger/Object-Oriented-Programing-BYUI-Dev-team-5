@@ -36,44 +36,6 @@ class EnemySprite(arcade.Sprite):
         there is no documentation for it so 
         i have to do it custom"""
 
-    def __init__(self, image_file_name, scale):
-        super().__init__(image_file_name, scale=scale)
-        self.size = 0
-
-    def update(self):
-        """ Move the enemy around. """
-        super().update()
-        #this calls from an unseen update class within arcade
-
-
-        """
-        my Idea is this would be the best spot
-        to figure out an enemy intelligence
-        I would have to add some conditionals such as
-        if the player is within 200 pixels than you activate
-        certain switches in the enemy to get it to do certain things
-        """
-
-
-        if self.center_x < LEFT_LIMIT:
-            self.center_x = LEFT_LIMIT
-            self.change_x *= -1
-        if self.center_x > RIGHT_LIMIT:
-            self.center_x = RIGHT_LIMIT
-            self.change_x *= -1
-        if self.center_y > TOP_LIMIT:
-            self.center_y = TOP_LIMIT
-            self.change_y *= -1
-        if self.center_y < BOTTOM_LIMIT:
-            self.center_y = BOTTOM_LIMIT
-            self.change_y *= -1
-
-class EnemySprite(arcade.Sprite):
-    """ Sprite that represents an enemy. 
-        Denver - I plan on Adding a intelligence to the enemy
-        there is no documentation for it so 
-        i have to do it custom"""
-
         # """Kyler: Could we add all of enemy's behaviors into this class?"""
 
     def __init__(self, image_file_name, scale):
@@ -93,6 +55,22 @@ class EnemySprite(arcade.Sprite):
             elif enemy.center_x > player.center_x:
                 enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
 
+    def creation(self):
+        enemies = arcade.check_for_collision_with_list(self.player, self.enemy_list)
+        if len(enemies) > 0:
+                enemies[0].remove_from_sprite_lists()
+        
+        for enemy in self.enemy_list:
+                # If the enemy hit a wall, reverse
+                if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
+                    enemy.change_x *= -1
+                    enemy.change_y *= -1
+        for enemy in self.enemy_list:
+                # If the enemy hits an enemy, reverse
+                if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
+                    enemy.change_x *= -1
+                    enemy.change_y *= -1
+
 class Bullets():
 
     def __init__(self):
@@ -108,10 +86,6 @@ class Bullets():
         diff_y = mouse_y - player_y
         bullet_angle = math.atan2(diff_y, diff_x)
 
-        self.bullet.velocity = (math.cos(bullet_angle) * self.bullet_speed, math.sin(bullet_angle) * self.bullet_speed)
-        self.bullet.radians = bullet_angle
-
-        self.bullet_list.append(self.bullet)
 
     def draw(self):
         self.bullet_list.draw()
@@ -147,7 +121,7 @@ class Game(arcade.Window):
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
-        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
+        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING, hit_box_algorithm = 'None')
         self.player_triangle = arcade.Sprite("resources/images/player_arrow.png", SCALING)
         self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
@@ -214,6 +188,7 @@ class Game(arcade.Window):
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
+        self.player.draw_hit_box()
         self.enemy_list.draw()
 
     def on_update(self, delta_time):
@@ -226,7 +201,6 @@ class Game(arcade.Window):
 
 
         for enemy in self.enemy_list:
-            
             EnemySprite.movement(self, self.player, enemy)
 
 
@@ -268,20 +242,7 @@ class Game(arcade.Window):
         self.all_sprites.update()
         self.enemy_list.update()
 
-        enemies = arcade.check_for_collision_with_list(self.player, self.enemy_list)
-        if len(enemies) > 0:
-                enemies[0].remove_from_sprite_lists()
-        
-        for enemy in self.enemy_list:
-                # If the enemy hit a wall, reverse
-                if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
-                    enemy.change_x *= -1
-                    enemy.change_y *= -1
-        for enemy in self.enemy_list:
-                # If the enemy hits an enemy, reverse
-                if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
-                    enemy.change_x *= -1
-                    enemy.change_y *= -1
+        EnemySprite.creation(self)
 
         # --- Manage Scrolling ---
         # Track if we need to change the viewport
