@@ -90,7 +90,23 @@ class Bullets():
     def draw(self):
         self.bullet_list.draw()
 
-    def update(self):
+    def update(self, view_left, view_bottom, enemy_list, wall_list):
+        for bullet in self.bullet_list:
+
+            # remove bullet if it leaves screen
+            if bullet.center_x < view_left or bullet.center_x > view_left + SCREEN_WIDTH or bullet.center_y < view_bottom or bullet.center_y > view_bottom + SCREEN_HEIGHT:
+                bullet.remove_from_sprite_lists()
+
+            # If bullet hits an enemy, damage the enemy and remove bullet
+            hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+                hit_list[0].remove_from_sprite_lists()
+
+            # If bullet hits a wall, remove bullet
+            if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
+                bullet.remove_from_sprite_lists()
+
         self.bullet_list.update()
         
         
@@ -285,8 +301,11 @@ class Game(arcade.Window):
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
 
-                
-        self.bullets.update()
+        if self.shooting == True:
+            if self.shot_ticker % 20 == 0:
+                self.bullets.create_bullet(self.mouse_x, self.mouse_y, self.player.center_x, self.player.center_y)
+            self.shot_ticker += 1
+        self.bullets.update(self.view_left, self.view_bottom, self.enemy_list, self.wall_list)
         
     def on_key_press(self, key, key_modifiers):
         """
@@ -346,13 +365,16 @@ class Game(arcade.Window):
         """
         Called when the user presses a mouse button.
         """
-        self.bullets.create_bullet(x, y, self.player.center_x, self.player.center_y)
+        self.mouse_x = x + self.view_left
+        self.mouse_y = y + self.view_bottom
+        self.shooting = True
+        self.shot_ticker = 0
 
     def on_mouse_release(self, x, y, button, key_modifiers):
         """
         Called when a user releases a mouse button.
         """
-        pass
+        self.shooting = False
 
 def main():
     """ Main method """
