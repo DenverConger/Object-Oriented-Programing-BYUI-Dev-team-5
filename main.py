@@ -85,6 +85,14 @@ class Bullets():
         diff_x = mouse_x - player_x 
         diff_y = mouse_y - player_y
         bullet_angle = math.atan2(diff_y, diff_x)
+        
+        # determine bullet velocity
+        self.bullet.velocity = (math.cos(bullet_angle) * self.bullet_speed, math.sin(bullet_angle) * self.bullet_speed)
+        # rotate sprite image so the bullet shoots straight
+        self.bullet.radians = bullet_angle
+
+        self.bullet_list.append(self.bullet)
+
 
 
     def draw(self):
@@ -147,6 +155,8 @@ class Game(arcade.Window):
         self.player.center_x = 50
         self.player.center_y = 50
         self.bullets = Bullets()
+        self.shooting = False
+        self.shot_ticker = 0
         
         
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -199,8 +209,8 @@ class Game(arcade.Window):
         # Drawing map lists
         self.background_list.draw()
         self.floor_list.draw()
-        self.wall_list.draw()
         self.bullets.draw()
+        self.wall_list.draw()
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
@@ -313,24 +323,7 @@ class Game(arcade.Window):
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
-        if  key == arcade.key.SPACE:
-            bullet_sprite = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
-            # bullet_sprite.guid = "Bullet"
-
-            bullet_speed = 13
-            bullet_sprite.change_y = \
-                math.cos(math.radians(self.player.angle)) * bullet_speed
-            bullet_sprite.change_x = \
-                -math.sin(math.radians(self.player.angle)) \
-                * bullet_speed
-
-            bullet_sprite.center_x = self.player.center_x
-            bullet_sprite.center_y = self.player.center_y
-            bullet_sprite.update()
-
-            self.bullet_list.append(bullet_sprite)
-
-            arcade.play_sound(self.laser_sound)
+        
         if key == arcade.key.UP or key == arcade.key.W:
             self.up_pressed = True
         if key == arcade.key.DOWN or key == arcade.key.S:
