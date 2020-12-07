@@ -210,7 +210,7 @@ class Game(arcade.Window):
         self.background_list.draw()
         self.floor_list.draw()
         self.wall_list.draw()
-        self.wall_list.draw_hit_boxes()
+        self.wall_list.draw_hit_boxes(color=(255, 0, 0))
         self.bullets.draw()
 
         # Call draw() on all your sprite lists below
