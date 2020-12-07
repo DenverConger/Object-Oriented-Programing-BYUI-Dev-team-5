@@ -30,8 +30,6 @@ RIGHT_VIEWPORT_MARGIN = 250
 BOTTOM_VIEWPORT_MARGIN = 50
 TOP_VIEWPORT_MARGIN = 250
 
-
-
 class EnemySprite(arcade.Sprite):
     """ Sprite that represents an enemy. 
         Denver - I plan on Adding a intelligence to the enemy
@@ -88,10 +86,6 @@ class Bullets():
         diff_y = mouse_y - player_y
         bullet_angle = math.atan2(diff_y, diff_x)
 
-        self.bullet.velocity = (math.cos(bullet_angle) * self.bullet_speed, math.sin(bullet_angle) * self.bullet_speed)
-        self.bullet.radians = bullet_angle
-
-        self.bullet_list.append(self.bullet)
 
     def draw(self):
         self.bullet_list.draw()
@@ -190,7 +184,6 @@ class Game(arcade.Window):
         self.background_list.draw()
         self.floor_list.draw()
         self.wall_list.draw()
-        self.wall_list.draw_hit_boxes()
         self.bullets.draw()
 
         # Call draw() on all your sprite lists below
