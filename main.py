@@ -12,13 +12,13 @@ SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
 SCREEN_TITLE = "Arena"
 SCALING = 0.5
-MOVEMENT_SPEED = 5
+MOVEMENT_SPEED = 10
 OFFSCREEN_SPACE = 300
 LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-SPRITE_SPEED = 1    
+SPRITE_SPEED = 5    
 starting_enemy_count = 10
 personality = "random"
 
@@ -29,44 +29,6 @@ LEFT_VIEWPORT_MARGIN = 50
 RIGHT_VIEWPORT_MARGIN = 250
 BOTTOM_VIEWPORT_MARGIN = 50
 TOP_VIEWPORT_MARGIN = 250
-
-class EnemySprite(arcade.Sprite):
-    """ Sprite that represents an enemy. 
-        Denver - I plan on Adding a intelligence to the enemy
-        there is no documentation for it so 
-        i have to do it custom"""
-
-    def __init__(self, image_file_name, scale):
-        super().__init__(image_file_name, scale=scale)
-        self.size = 0
-
-    def update(self):
-        """ Move the enemy around. """
-        super().update()
-        #this calls from an unseen update class within arcade
-
-
-        """
-        my Idea is this would be the best spot
-        to figure out an enemy intelligence
-        I would have to add some conditionals such as
-        if the player is within 200 pixels than you activate
-        certain switches in the enemy to get it to do certain things
-        """
-
-
-        if self.center_x < LEFT_LIMIT:
-            self.center_x = LEFT_LIMIT
-            self.change_x *= -1
-        if self.center_x > RIGHT_LIMIT:
-            self.center_x = RIGHT_LIMIT
-            self.change_x *= -1
-        if self.center_y > TOP_LIMIT:
-            self.center_y = TOP_LIMIT
-            self.change_y *= -1
-        if self.center_y < BOTTOM_LIMIT:
-            self.center_y = BOTTOM_LIMIT
-            self.change_y *= -1
 
 class EnemySprite(arcade.Sprite):
     """ Sprite that represents an enemy. 
@@ -93,6 +55,22 @@ class EnemySprite(arcade.Sprite):
             elif enemy.center_x > player.center_x:
                 enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
 
+    def creation(self):
+        enemies = arcade.check_for_collision_with_list(self.player, self.enemy_list)
+        if len(enemies) > 0:
+                enemies[0].remove_from_sprite_lists()
+        
+        for enemy in self.enemy_list:
+                # If the enemy hit a wall, reverse
+                if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
+                    enemy.change_x *= -1
+                    enemy.change_y *= -1
+        for enemy in self.enemy_list:
+                # If the enemy hits an enemy, reverse
+                if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
+                    enemy.change_x *= -1
+                    enemy.change_y *= -1
+
 class Bullets():
 
     def __init__(self):
@@ -100,21 +78,14 @@ class Bullets():
         self.bullet_speed = 50
         self.bullet_sprite = ":resources:images/space_shooter/laserBlue01.png"
     
-    def create_bullet(self, dest_x, dest_y, start_x, start_y):
+    def create_bullet(self, mouse_x, mouse_y, player_x, player_y):
         self.bullet = arcade.Sprite(self.bullet_sprite)
-        self.bullet.position = (start_x, start_y)
+        self.bullet.position = (player_x, player_y)
 
-        # determine angle in radians of the bullet's trajectory
-        diff_x = dest_x - start_x 
-        diff_y = dest_y - start_y
+        diff_x = mouse_x - player_x 
+        diff_y = mouse_y - player_y
         bullet_angle = math.atan2(diff_y, diff_x)
 
-        # determine bullet velocity
-        self.bullet.velocity = (math.cos(bullet_angle) * self.bullet_speed, math.sin(bullet_angle) * self.bullet_speed)
-        # rotate sprite image so the bullet shoots straight
-        self.bullet.radians = bullet_angle
-
-        self.bullet_list.append(self.bullet)
 
     def draw(self):
         self.bullet_list.draw()
@@ -137,9 +108,6 @@ class Bullets():
                 bullet.remove_from_sprite_lists()
 
         self.bullet_list.update()
-
-
-
         
         
         
@@ -158,7 +126,6 @@ class Game(arcade.Window):
 
         self.mouse_x = 1
         self.mouse_y = 1
-
         
         # Lets us use relative file paths
         file_path = os.path.dirname(os.path.abspath(__file__))
@@ -170,19 +137,16 @@ class Game(arcade.Window):
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
-        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
+        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING, hit_box_algorithm = 'None')
         self.player_triangle = arcade.Sprite("resources/images/player_arrow.png", SCALING)
         self.player_list = arcade.SpriteList()
-        #self.wall_list = arcade.SpriteList(use_spatial_hash=True)
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
-        #wall_img = ":resources:images/tiles/brickBrown.png"
+        wall_img = ":resources:images/tiles/brickBrown.png"
         self.player.center_x = 50
         self.player.center_y = 50
-
         self.bullets = Bullets()
-        self.shooting = False
-        self.shot_ticker = 0
         
         
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -236,12 +200,12 @@ class Game(arcade.Window):
         self.background_list.draw()
         self.floor_list.draw()
         self.wall_list.draw()
-
+        self.bullets.draw()
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
+        self.player.draw_hit_box()
         self.enemy_list.draw()
-        self.bullets.draw()
 
     def on_update(self, delta_time):
         # self.physics_engine.update()
@@ -253,7 +217,6 @@ class Game(arcade.Window):
 
 
         for enemy in self.enemy_list:
-            
             EnemySprite.movement(self, self.player, enemy)
 
 
@@ -295,20 +258,7 @@ class Game(arcade.Window):
         self.all_sprites.update()
         self.enemy_list.update()
 
-        enemies = arcade.check_for_collision_with_list(self.player, self.enemy_list)
-        if len(enemies) > 0:
-                enemies[0].remove_from_sprite_lists()
-        
-        for enemy in self.enemy_list:
-                # If the enemy hit a wall, reverse
-                if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
-                    enemy.change_x *= -1
-                    enemy.change_y *= -1
-        for enemy in self.enemy_list:
-                # If the enemy hits an enemy, reverse
-                if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
-                    enemy.change_x *= -1
-                    enemy.change_y *= -1
+        EnemySprite.creation(self)
 
         # --- Manage Scrolling ---
         # Track if we need to change the viewport
@@ -355,8 +305,7 @@ class Game(arcade.Window):
             if self.shot_ticker % 20 == 0:
                 self.bullets.create_bullet(self.mouse_x, self.mouse_y, self.player.center_x, self.player.center_y)
             self.shot_ticker += 1
-        self.bullets.update(self.view_left, self.view_bottom, self.enemy_list, self.wall_list )
-
+        self.bullets.update(self.view_left, self.view_bottom, self.enemy_list, self.wall_list)
         
     def on_key_press(self, key, key_modifiers):
         """
@@ -420,7 +369,6 @@ class Game(arcade.Window):
         self.mouse_y = y + self.view_bottom
         self.shooting = True
         self.shot_ticker = 0
-        # self.bullets.create_bullet(self.mouse_x, self.mouse_y, self.player.center_x, self.player.center_y)
 
     def on_mouse_release(self, x, y, button, key_modifiers):
         """
