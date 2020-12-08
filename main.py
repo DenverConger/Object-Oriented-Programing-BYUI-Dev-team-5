@@ -93,8 +93,6 @@ class Bullets():
 
         self.bullet_list.append(self.bullet)
 
-
-
     def draw(self):
         self.bullet_list.draw()
 
@@ -116,9 +114,30 @@ class Bullets():
                 bullet.remove_from_sprite_lists()
 
         self.bullet_list.update()
+
+class Map():
+    def __init__(self):
+        self.map = None
+        self.wall_physics = None
+
+    def load_map(self, map, player):
+        self.map = map
+        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', 2)
+        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', 2)
+        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', 2)
         
-        
-        
+        self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
+
+    def draw_bottom(self):
+        self.background_list.draw()
+        self.floor_list.draw()
+
+    def draw_walls(self):
+        self.wall_list.draw()
+    
+    def update(self):
+        self.wall_physics.update()
+
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
@@ -127,7 +146,6 @@ class Game(arcade.Window):
 
         # Sprite Lists Initialization
         self.all_sprites = None
-        self.wall_list = None
         self.enemy_list = None
         self.player_list = None
         self.player = None
@@ -151,12 +169,15 @@ class Game(arcade.Window):
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
-        wall_img = ":resources:images/tiles/brickBrown.png"
+        
         self.player.center_x = 50
         self.player.center_y = 50
+        
         self.bullets = Bullets()
         self.shooting = False
         self.shot_ticker = 0
+
+        self.map = Map()
         
         
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -175,12 +196,11 @@ class Game(arcade.Window):
         self.view_bottom = 0
         self.view_left = 0
 
-        self.current_map = None
-        self.load_map(self.current_map)
+        self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player)
 
 
         for i in range(starting_enemy_count):
-            image_no = random.randrange(4)
+            image_no = random.randrange(4)      #unused variable Should we remove this line?
             enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
            
             enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
@@ -189,14 +209,14 @@ class Game(arcade.Window):
             self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
     
-    def load_map(self, map):
+    """def load_map(self, map):
         map = arcade.tilemap.read_tmx('resources/maps/map0.tmx')
 
         self.wall_list = arcade.tilemap.process_layer(map, 'Walls', 2)
         self.floor_list = arcade.tilemap.process_layer(map, 'Floor', 2)
         self.background_list = arcade.tilemap.process_layer(map, 'Ground', 2)
         
-        self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)
+        self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)"""
 
     def on_draw(self):
         """
@@ -207,10 +227,9 @@ class Game(arcade.Window):
         arcade.start_render()
 
         # Drawing map lists
-        self.background_list.draw()
-        self.floor_list.draw()
+        self.map.draw_bottom()
         self.bullets.draw()
-        self.wall_list.draw()
+        self.map.draw_walls()
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
@@ -218,13 +237,10 @@ class Game(arcade.Window):
         self.enemy_list.draw()
 
     def on_update(self, delta_time):
-        # self.physics_engine.update()
-        self.wall_physics.update()
+        self.map.update()       # Updates the player and wall physics. 
 
         self.player.change_y = 0
         self.player.change_x = 0
-
-
 
         for enemy in self.enemy_list:
             EnemySprite.movement(self, self.player, enemy)
