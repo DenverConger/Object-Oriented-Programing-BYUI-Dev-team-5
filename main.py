@@ -31,9 +31,6 @@ BOTTOM_VIEWPORT_MARGIN = 50
 TOP_VIEWPORT_MARGIN = 250
 
 class Scrolling():
-        # Track if we need to change the viewport
-    # self.changed = False
-
     def __init__(self, player):
         self.view_bottom = 0
         self.view_left = 0
@@ -182,10 +179,6 @@ class Game(arcade.Window):
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
 
-        # # Used to keep track of our scrolling
-        # self.view_bottom = 0
-        # self.view_left = 0
-
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
         self.player = arcade.Sprite("resources/images/player_circle.png", SCALING, hit_box_algorithm = 'None')
@@ -318,7 +311,7 @@ class Game(arcade.Window):
             if self.shot_ticker % 20 == 0:
                 self.bullets.create_bullet(self.mouse_x, self.mouse_y, self.player.center_x, self.player.center_y)
             self.shot_ticker += 1
-        self.bullets.update(self.view_left, self.view_bottom, self.enemy_list, self.wall_list)
+        self.bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.wall_list)
         
     def on_key_press(self, key, key_modifiers):
         """
@@ -354,15 +347,15 @@ class Game(arcade.Window):
         # self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
         # self.player.position = (x, y)                                                       # Mouse Movement
 
-        self.mouse_x = x + self.view_left
-        self.mouse_y = y + self.view_bottom
+        self.mouse_x = x + self.scrolling.view_left
+        self.mouse_y = y + self.scrolling.view_bottom
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         """
         Called when the user presses a mouse button.
         """
-        self.mouse_x = x + self.view_left
-        self.mouse_y = y + self.view_bottom
+        self.mouse_x = x + self.scrolling.view_left
+        self.mouse_y = y + self.scrolling.view_bottom
         self.shooting = True
         self.shot_ticker = 0
 
