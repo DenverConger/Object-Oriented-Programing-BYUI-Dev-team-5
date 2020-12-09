@@ -45,7 +45,6 @@ class EnemySprite(arcade.Sprite):
 
 
     def movement(self, player, enemy):
-
             if enemy.center_y < player.center_y:
                 enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
             elif enemy.center_y > player.center_y:
@@ -76,7 +75,7 @@ class Bullets():
     def __init__(self):
         self.bullet_list = arcade.SpriteList()
         self.bullet_speed = 50
-        self.bullet_sprite = ":resources:images/space_shooter/laserBlue01.png"
+        self.bullet_sprite = "resources/images/laserBlue01.png"
     
     def create_bullet(self, mouse_x, mouse_y, player_x, player_y):
         self.bullet = arcade.Sprite(self.bullet_sprite)
@@ -208,15 +207,6 @@ class Game(arcade.Window):
 
             self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
-    
-    """def load_map(self, map):
-        map = arcade.tilemap.read_tmx('resources/maps/map0.tmx')
-
-        self.wall_list = arcade.tilemap.process_layer(map, 'Walls', 2)
-        self.floor_list = arcade.tilemap.process_layer(map, 'Floor', 2)
-        self.background_list = arcade.tilemap.process_layer(map, 'Ground', 2)
-        
-        self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)"""
 
     def on_draw(self):
         """
@@ -233,7 +223,6 @@ class Game(arcade.Window):
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
-        self.player.draw_hit_box()
         self.enemy_list.draw()
 
     def on_update(self, delta_time):
@@ -255,17 +244,6 @@ class Game(arcade.Window):
             self.player.change_x = MOVEMENT_SPEED
         elif self.left_pressed and not self.right_pressed:
             self.player.change_x = -MOVEMENT_SPEED
-        # If you press both up and down, you can move the player right, but not left. If you press right and left, you can move the player down, but not up.
-
-        # Hitting Edges of Screen
-        # if self.player.top > SCREEN_HEIGHT:
-        #     self.player.top = SCREEN_HEIGHT
-        # if self.player.bottom < 0:
-        #     self.player.bottom = 0
-        # if self.player.left < 0:
-        #     self.player.left = 0
-        # if self.player.right > SCREEN_WIDTH:
-        #     self.player.right = SCREEN_WIDTH
         
         self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly. I kind of like it wobbly. Needs to be uncommented even if you also use the line below.  
         self.player_triangle.velocity = self.player.velocity        # This line uncommented makes it strict. 
