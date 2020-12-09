@@ -39,7 +39,7 @@ class EnemySprite(arcade.Sprite):
     
 
     def movement(self, player, enemy):
-        if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 1000): 
+        if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 650): 
             if arcade.has_line_of_sight(self.player.position,
                                             enemy.position,
                                             self.wall_list):
