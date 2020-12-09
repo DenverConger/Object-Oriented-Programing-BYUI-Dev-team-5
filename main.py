@@ -95,6 +95,7 @@ class Bullets():
         self.bullet_list.draw()
 
     def update(self, view_left, view_bottom, enemy_list, wall_list):
+        self.bullet_list.update()
         for bullet in self.bullet_list:
 
             # remove bullet if it leaves screen
@@ -111,7 +112,7 @@ class Bullets():
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
 
-        self.bullet_list.update()
+
 
 class Map():
     def __init__(self):
@@ -310,7 +311,7 @@ class Game(arcade.Window):
             if self.shot_ticker % 20 == 0:
                 self.bullets.create_bullet(self.mouse_x, self.mouse_y, self.player.center_x, self.player.center_y)
             self.shot_ticker += 1
-        self.bullets.update(self.view_left, self.view_bottom, self.enemy_list, self.wall_list)
+        self.bullets.update(self.view_left, self.view_bottom, self.enemy_list, self.map.wall_list)
         
     def on_key_press(self, key, key_modifiers):
         """
