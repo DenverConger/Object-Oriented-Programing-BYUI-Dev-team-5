@@ -41,7 +41,7 @@ class EnemySprite(arcade.Sprite):
         if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 650): 
             if arcade.has_line_of_sight(self.player.position,
                                             enemy.position,
-                                            self.wall_list):
+                                            self.map.wall_list):
                 if enemy.center_y < player.center_y:
                     enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
                 elif enemy.center_y > player.center_y:
