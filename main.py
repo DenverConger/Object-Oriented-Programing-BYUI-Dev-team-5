@@ -25,9 +25,9 @@ personality = "random"
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
-LEFT_VIEWPORT_MARGIN = 50
+LEFT_VIEWPORT_MARGIN = 150
 RIGHT_VIEWPORT_MARGIN = 250
-BOTTOM_VIEWPORT_MARGIN = 50
+BOTTOM_VIEWPORT_MARGIN = 150
 TOP_VIEWPORT_MARGIN = 250
 
 class EnemySprite(arcade.Sprite):
@@ -41,8 +41,6 @@ class EnemySprite(arcade.Sprite):
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
         self.size = 0
-
-
 
     def movement(self, player, enemy):
             if enemy.center_y < player.center_y:
