@@ -12,23 +12,28 @@ SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
 SCREEN_TITLE = "Arena"
 SCALING = 0.5
-MOVEMENT_SPEED = 7  
-OFFSCREEN_SPACE = 300
-LEFT_LIMIT = 0
-RIGHT_LIMIT = SCREEN_WIDTH
-BOTTOM_LIMIT = 0
-TOP_LIMIT = SCREEN_HEIGHT
+SCALING_MAP = 2
+TILE_SIZE = 32
+MAP_WIDTH = (TILE_SIZE * SCALING_MAP * 100) - 1
+MAP_HEIGHT = (TILE_SIZE * SCALING_MAP * 100) - 1
+
+
+MOVEMENT_SPEED = 7      # What is the difference between MOVEMENT_SPEED and SPRITE_SPEED?
 SPRITE_SPEED = 1    
 starting_enemy_count = 10
 personality = "random"
 
+LEFT_LIMIT = 0          # Do you guys think that we could make do without these constants? -Kyler
+RIGHT_LIMIT = SCREEN_WIDTH
+BOTTOM_LIMIT = 0
+TOP_LIMIT = SCREEN_HEIGHT
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
-LEFT_VIEWPORT_MARGIN = 150
-RIGHT_VIEWPORT_MARGIN = 250
-BOTTOM_VIEWPORT_MARGIN = 150
-TOP_VIEWPORT_MARGIN = 250
+LEFT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
+RIGHT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
+BOTTOM_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
+TOP_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
 
 class Scrolling():
     def __init__(self, player):
@@ -182,9 +187,9 @@ class Map():
 
     def load_map(self, map, player):
         self.map = map
-        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', 2)
-        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', 2)
-        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', 2)
+        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP)
+        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP)
+        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP)
 
         self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
 
@@ -201,8 +206,8 @@ class Map():
 class Player():
 
     def __init__(self):
-        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING, hit_box_algorithm = 'None')
-        self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
+        self.player.position = (3200, 3200)
 
         self.player_triangle = arcade.Sprite("resources/images/player_arrow.png", SCALING)
         self.player_triangle.position = self.player.position
@@ -315,9 +320,16 @@ class Game(arcade.Window):
         """ Set up the game variables. Call to re-start the game. """
         self.enemy_list = arcade.SpriteList()
         self.scrolling = Scrolling(self.player)
-        self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player.player)
+        self.map.load_map(arcade.tilemap.read_tmx('resources/maps/level0.tmx'), self.player.player)
         EnemySprite.creation(self)
         self.enemy_bullets = Bullets(5)
+
+        # My attempt at centering the player.
+        self.player.player.position = (MAP_WIDTH / 2, MAP_HEIGHT / 2)
+        self.player.update(self.mouse_x, self.mouse_y, None, None, self.enemy_list, None)
+        self.scrolling.view_bottom += SCREEN_HEIGHT
+        arcade.set_viewport( (MAP_WIDTH / 2) - (SCREEN_WIDTH), (MAP_WIDTH / 2) + (SCREEN_WIDTH), (MAP_HEIGHT / 2) - (SCREEN_HEIGHT), (MAP_HEIGHT / 2) + (SCREEN_HEIGHT))
+        # left, right, bottom, top
 
     def on_draw(self):
         """
