@@ -18,7 +18,7 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-SPRITE_SPEED = 5    
+SPRITE_SPEED = 1    
 starting_enemy_count = 10
 personality = "random"
 
@@ -80,11 +80,21 @@ class Scrolling():
 class EnemySprite(arcade.Sprite):
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
-        self.size = 0    
+        self.size = 0
+        self.player_detected = False
+        self.shot_timer = 30
 
-    def movement(self, player, enemy):
-        if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 650): 
-            if arcade.has_line_of_sight(player.position, enemy.position, self.map.wall_list):
+    def detect_player(self, player):
+        for enemy in self.enemy_list:
+            if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 650): 
+                if arcade.has_line_of_sight(player.position, enemy.position, self.map.wall_list):
+                    enemy.player_detected = True
+                else: 
+                    enemy.player_detected = False
+
+    def movement(self, player):
+        for enemy in self.enemy_list:
+            if enemy.player_detected:
                 if enemy.center_y < player.center_y:
                     enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
                 elif enemy.center_y > player.center_y:
@@ -93,12 +103,25 @@ class EnemySprite(arcade.Sprite):
                     enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
                 elif enemy.center_x > player.center_x:
                     enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
-                
 
+    def attack(self, player):
+        for enemy in self.enemy_list:
+            if enemy.player_detected:
+                if enemy.shot_timer % 60 == 0:
+                    self.enemy_bullets.create_bullet(player.center_x, player.center_y, enemy.center_x, enemy.center_y)
+                enemy.shot_timer += 1
+                    
     def update_enemy(self):
+        EnemySprite.detect_player(self, self.player.player)
+        EnemySprite.movement(self, self.player.player)
+        EnemySprite.attack(self, self.player.player)
+
         enemies = arcade.check_for_collision_with_list(self.player.player, self.enemy_list)
         if len(enemies) > 0:
                 enemies[0].remove_from_sprite_lists()
+                
+        self.enemy_list.update()
+        self.enemy_bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player_list, self.map.wall_list)
         
     def creation(self):
         for i in range(starting_enemy_count):
@@ -112,17 +135,17 @@ class EnemySprite(arcade.Sprite):
             self.enemy_list.append(enemy_sprite)
 
 class Bullets():
-    def __init__(self):
+    def __init__(self, bullet_speed):
         self.bullet_list = arcade.SpriteList()
-        self.bullet_speed = 50
+        self.bullet_speed = bullet_speed
         self.bullet_sprite = "resources/images/laserBlue01.png"
     
-    def create_bullet(self, mouse_x, mouse_y, player_x, player_y):
+    def create_bullet(self, dest_x, dest_y, start_x, start_y):
         self.bullet = arcade.Sprite(self.bullet_sprite)
-        self.bullet.position = (player_x, player_y)
+        self.bullet.position = (start_x, start_y)
 
-        diff_x = mouse_x - player_x 
-        diff_y = mouse_y - player_y
+        diff_x = dest_x - start_x 
+        diff_y = dest_y - start_y
         bullet_angle = math.atan2(diff_y, diff_x)
         
         # determine bullet velocity
@@ -152,7 +175,7 @@ class Bullets():
             # If bullet hits a wall, remove bullet
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
-                
+              
 class Map():
     def __init__(self):
         self.map = None
@@ -187,20 +210,22 @@ class Player():
 
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player)
-        self.player_list.append(self.player_triangle)
+        self.triangle_list = arcade.SpriteList()
+        self.triangle_list.append(self.player_triangle)
 
         self.up_pressed = False
         self.down_pressed = False
         self.right_pressed = False
         self.left_pressed = False
 
-        self.bullets = Bullets()
+        self.bullets = Bullets(50)
         self.shooting = False
         self.shot_ticker = 0
 
     def draw(self):
         self.bullets.draw()
         self.player_list.draw()
+        self.triangle_list.draw()
 
     def start_movement(self, key):
         if key == arcade.key.UP or key == arcade.key.W:
@@ -250,17 +275,19 @@ class Player():
         else:
             self.player_triangle.angle = angle
 
-    def shoot_bullet(self, mouse_x, mouse_y):
-        self.bullets.create_bullet(mouse_x, mouse_y, self.player.center_x, self.player.center_y)
+        self.triangle_list.update()
+
+    def shoot(self, mouse_x, mouse_y):
+        if self.shot_ticker % 15 == 0:        
+            self.bullets.create_bullet(mouse_x, mouse_y, self.player.center_x, self.player.center_y)
+        self.shot_ticker += 1
 
     def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
 
         if self.shooting == True:
-            if self.shot_ticker % 20 == 0:
-                self.shoot_bullet(mouse_x, mouse_y)
-            self.shot_ticker += 1
+            self.shoot(mouse_x, mouse_y)
 
         self.player_list.update()
         self.bullets.update(view_left, view_bottom, enemy_list, wall_list)
@@ -289,33 +316,10 @@ class Game(arcade.Window):
         """ Set up the game variables. Call to re-start the game. """
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
-
         self.scrolling = Scrolling(self.player)
-        
-
-        # self.all_sprites.append(self.player.player)
-
-        # self.all_sprites.append(self.player.player_triangle)
-
-
-        # Used to keep track of our scrolling
-        self.view_bottom = 0
-        self.view_left = 0
-
-
         self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player.player)
-
-        for i in range(starting_enemy_count):
-            image_no = random.randrange(4)      #unused variable Should we remove this line?
-            enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
-           
-            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
-            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
-
-            self.all_sprites.append(enemy_sprite)
-            self.enemy_list.append(enemy_sprite)
-
         EnemySprite.creation(self)
+        self.enemy_bullets = Bullets(5)
         
 
     def on_draw(self):
@@ -333,24 +337,21 @@ class Game(arcade.Window):
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
         self.enemy_list.draw()
+        self.enemy_bullets.draw()
         self.player.draw()
 
     def on_update(self, delta_time):
         self.map.update()       # Updates the player and wall physics. 
       
-        for enemy in self.enemy_list:
-            EnemySprite.movement(self, self.player.player, enemy)
+
+        # EnemySprite.movement(self, self.player.player)
 
         # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
         self.all_sprites.update()
-        self.enemy_list.update()
+        # self.enemy_list.update()
 
         EnemySprite.update_enemy(self)
 
-        # --- Manage Scrolling ---
-        # Track if we need to change the viewport
-
-        changed = False
 
         self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list)
 
