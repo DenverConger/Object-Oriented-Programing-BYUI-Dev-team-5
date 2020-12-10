@@ -131,7 +131,6 @@ class EnemySprite(arcade.Sprite):
             enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
             enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
 
-            self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
 
 class Bullets():
@@ -302,7 +301,7 @@ class Game(arcade.Window):
         self.map = Map()
 
         # Sprite Lists Initialization
-        self.all_sprites = None
+        # self.all_sprites = None
         self.enemy_list = None
 
         self.mouse_x = 1
@@ -314,13 +313,11 @@ class Game(arcade.Window):
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
-        self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.scrolling = Scrolling(self.player)
         self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player.player)
         EnemySprite.creation(self)
         self.enemy_bullets = Bullets(5)
-        
 
     def on_draw(self):
         """
@@ -335,23 +332,14 @@ class Game(arcade.Window):
         self.map.draw_walls()
 
         # Call draw() on all your sprite lists below
-        self.all_sprites.draw()
         self.enemy_list.draw()
         self.enemy_bullets.draw()
         self.player.draw()
 
     def on_update(self, delta_time):
         self.map.update()       # Updates the player and wall physics. 
-      
-
-        # EnemySprite.movement(self, self.player.player)
-
-        # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
-        self.all_sprites.update()
-        # self.enemy_list.update()
 
         EnemySprite.update_enemy(self)
-
 
         self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list)
 
@@ -360,14 +348,12 @@ class Game(arcade.Window):
         self.scrolling.scroll_up()
         self.scrolling.scroll_down()
 
-        
     def on_key_press(self, key, key_modifiers):
         """
         Called whenever a key on the keyboard is pressed.
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
-        
         self.player.start_movement(key)
 
         if key == arcade.key.Q:
@@ -377,10 +363,6 @@ class Game(arcade.Window):
         self.player.stop_movement(key)
 
     def on_mouse_motion(self, x, y, dx, dy):
-        # These two lines are two types of player motion based on the mouse. Uncomment to unlock the motion.
-        # self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
-        # self.player.position = (x, y)                                                       # Mouse Movement
-
         self.mouse_x = x + self.scrolling.view_left
         self.mouse_y = y + self.scrolling.view_bottom
 
@@ -388,7 +370,6 @@ class Game(arcade.Window):
         """
         Called when the user presses a mouse button.
         """
-        
         self.player.shooting = True
         self.player.shot_ticker = 0
         self.mouse_x = x + self.scrolling.view_left
