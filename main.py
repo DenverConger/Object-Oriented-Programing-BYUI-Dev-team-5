@@ -40,29 +40,29 @@ class Scrolling():
     def scroll_left(self):
         # Scroll left
         left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
-        if self.player.left < left_boundary:
-            self.view_left -= left_boundary - self.player.left
+        if self.player.player.left < left_boundary:
+            self.view_left -= left_boundary - self.player.player.left
             self.changed = True
 
     def scroll_right(self):
         # Scroll right
         right_boundary = self.view_left + SCREEN_WIDTH - RIGHT_VIEWPORT_MARGIN
-        if self.player.right > right_boundary:
-            self.view_left += self.player.right - right_boundary
+        if self.player.player.right > right_boundary:
+            self.view_left += self.player.player.right - right_boundary
             self.changed = True
 
     def scroll_up(self):
         # Scroll up
         top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN
-        if self.player.top > top_boundary:
-            self.view_bottom += self.player.top - top_boundary
+        if self.player.player.top > top_boundary:
+            self.view_bottom += self.player.player.top - top_boundary
             self.changed = True
 
     def scroll_down(self):
         # Scroll down
         bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN
-        if self.player.bottom < bottom_boundary:
-            self.view_bottom -= bottom_boundary - self.player.bottom
+        if self.player.player.bottom < bottom_boundary:
+            self.view_bottom -= bottom_boundary - self.player.player.bottom
             self.changed = True
 
         if self.changed:
@@ -199,8 +199,8 @@ class Player():
         self.shot_ticker = 0
 
     def draw(self):
-        self.player_list.draw()
         self.bullets.draw()
+        self.player_list.draw()
 
     def start_movement(self, key):
         if key == arcade.key.UP or key == arcade.key.W:
@@ -352,7 +352,7 @@ class Game(arcade.Window):
 
         changed = False
 
-        self.player.update(self.mouse_x, self.mouse_y, self.view_left, self.view_bottom, self.enemy_list, self.map.wall_list)
+        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list)
 
         self.scrolling.scroll_left()
         self.scrolling.scroll_right()
