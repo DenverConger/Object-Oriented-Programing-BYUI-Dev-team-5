@@ -140,6 +140,8 @@ class Bullets():
         self.bullet_list.draw()
 
     def update(self, view_left, view_bottom, enemy_list, wall_list):
+        self.bullet_list.update()
+        
         for bullet in self.bullet_list:
 
             # remove bullet if it leaves screen
@@ -156,7 +158,6 @@ class Bullets():
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
 
-        self.bullet_list.update()
         for bullet in self.bullet_list:
 
             # remove bullet if it leaves screen
