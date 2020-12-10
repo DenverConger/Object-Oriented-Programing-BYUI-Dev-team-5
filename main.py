@@ -8,6 +8,9 @@ import math
 from datetime import datetime, timedelta # For seeding random number generation.
 import sys
 
+# PROBABLY HAVE TO INSTALL PYGAMES (python -m pip install pygames)
+import pygame as pg
+
 SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
 SCREEN_TITLE = "Arena"
@@ -18,7 +21,7 @@ LEFT_LIMIT = 0
 RIGHT_LIMIT = SCREEN_WIDTH
 BOTTOM_LIMIT = 0
 TOP_LIMIT = SCREEN_HEIGHT
-SPRITE_SPEED = 1    
+SPRITE_SPEED = 5    
 starting_enemy_count = 10
 personality = "random"
 
@@ -29,6 +32,114 @@ LEFT_VIEWPORT_MARGIN = 150
 RIGHT_VIEWPORT_MARGIN = 250
 BOTTOM_VIEWPORT_MARGIN = 150
 TOP_VIEWPORT_MARGIN = 250
+
+#Inventory
+TITLE = "System Inventory"
+WIDTH = 800
+HEIGHT = 800
+UIHEIGHT = 300
+INVTILESIZE = 48
+WHITE = (255, 255, 255)
+DARKGREY = (40, 40, 40)
+BGCOLOR = DARKGREY
+
+class Inventory():
+    def __init__(self, player, totalSlots, cols, rows):
+        self.player = player
+        self.totalSlots = totalSlots
+        self.cols = cols
+        self.rows = rows
+        self.appendSlots()
+        self.inventory_slots = []
+        self.display_inventory = False
+
+        self.movingitem = None
+        self.movingitemslot = None
+
+    def appendSlots(self):
+            while len(self.inventory_slots) != self.totalSlots:
+                for x in range(WIDTH//2 - ((INVTILESIZE+2) * self.cols)//2, WIDTH//2 + ((INVTILESIZE+2) * self.cols) //2, INVTILESIZE+2):
+                    for y in range(UIHEIGHT, UIHEIGHT+INVTILESIZE * self.rows, INVTILESIZE+2):
+                        self.inventory_slots.append(InventorySlot(x, y))
+
+    def draw(self, screen):
+        if self.display_inventory:
+            for slot in self.inventory_slots:
+                slot.draw(screen)
+            for slot in self.inventory_slots:
+                slot.drawItems(screen)
+
+    def toggleInventory(self):
+	    	self.display_inventory = not self.display_inventory
+
+    def addItemInv(self, item, slot=None):
+            if slot == None:
+                for slots in self.inventory_slots:
+                    if slots.item == None:
+                        slots.item = item
+                        break
+            if slot != None:
+                if slot.item != None:
+                    self.movingitemslot.item = slot.item
+                    slot.item = item
+                else:
+                    slot.item = item
+            
+    def removeItemInv(self, item):
+            for slot in self.inventory_slots:
+                if slot.item == item:
+                    slot.item = None
+                    break
+    
+    def moveItems(self, screen):
+        mousepos = pg.mouse.get_pos()
+        for slot in self.inventory_slots:
+		        if slot.draw(screen).collidepoint(mousepos) and slot.item != None:
+                            slot.item.is_moving = True
+                            self.movingitem = slot.item
+                            self.movingitemslot = slot
+                            break
+
+    def placeItem(self, screen):
+            mousepos = pg.mouse.get_pos()
+            for slot in self.inventory_slots:
+                    if slot.draw(screen).collidepoint(mousepos) and self.movingitem != None:
+                            if isinstance(slot, InventorySlot) and not isinstance(slot) and not isinstance(self.movingitemslot):
+                                    self.removeItemInv(self.movingitem)
+                                    self.addItemInv(self.movingitem, slot)
+                                    break
+            if self.movingitem != None:
+                    self.movingitem.is_moving = False
+                    self.movingitem = None
+                    self.movingitemslot = None
+    
+    def useItem(self, item):
+            if isinstance(item,):
+                item.use(self, self.player)
+
+class InventorySlot:
+	def __init__(self, x, y):
+		self.x = x
+		self.y = y
+		self.item = None
+
+	def draw(self, screen):
+		return pg.draw.rect(screen, WHITE, (self.x, self.y, INVTILESIZE, INVTILESIZE))
+	
+	def drawItems(self, screen):
+		if self.item != None and not self.item.is_moving:
+			self.image = pg.image.load(self.item.img).convert_alpha()
+			screen.blit(self.image, (self.x-7, self.y-7))
+		if self.item != None and self.item.is_moving:
+			mousepos1 = pg.mouse.get_pos()
+			self.image = pg.image.load(self.item.img).convert_alpha()
+			screen.blit(self.image, (mousepos1[0]-20,mousepos1[1]-20))    
+    
+class InventoryItem:
+	def __init__(self, img, value):
+		self.img = img
+		self.value = value
+		self.is_moving = False
 
 class Scrolling():
     def __init__(self, player):
@@ -80,21 +191,11 @@ class Scrolling():
 class EnemySprite(arcade.Sprite):
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
-        self.size = 0
-        self.player_detected = False
-        self.shot_timer = 30
+        self.size = 0    
 
-    def detect_player(self, player):
-        for enemy in self.enemy_list:
-            if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 650): 
-                if arcade.has_line_of_sight(player.position, enemy.position, self.map.wall_list):
-                    enemy.player_detected = True
-                else: 
-                    enemy.player_detected = False
-
-    def movement(self, player):
-        for enemy in self.enemy_list:
-            if enemy.player_detected:
+    def movement(self, player, enemy):
+        if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 650): 
+            if arcade.has_line_of_sight(player.position, enemy.position, self.map.wall_list):
                 if enemy.center_y < player.center_y:
                     enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
                 elif enemy.center_y > player.center_y:
@@ -103,25 +204,12 @@ class EnemySprite(arcade.Sprite):
                     enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
                 elif enemy.center_x > player.center_x:
                     enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
+                
 
-    def attack(self, player):
-        for enemy in self.enemy_list:
-            if enemy.player_detected:
-                if enemy.shot_timer % 60 == 0:
-                    self.enemy_bullets.create_bullet(player.center_x, player.center_y, enemy.center_x, enemy.center_y)
-                enemy.shot_timer += 1
-                    
     def update_enemy(self):
-        EnemySprite.detect_player(self, self.player.player)
-        EnemySprite.movement(self, self.player.player)
-        EnemySprite.attack(self, self.player.player)
-
         enemies = arcade.check_for_collision_with_list(self.player.player, self.enemy_list)
         if len(enemies) > 0:
                 enemies[0].remove_from_sprite_lists()
-                
-        self.enemy_list.update()
-        self.enemy_bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player_list, self.map.wall_list)
         
     def creation(self):
         for i in range(starting_enemy_count):
@@ -131,20 +219,21 @@ class EnemySprite(arcade.Sprite):
             enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
             enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
 
+            self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
 
 class Bullets():
-    def __init__(self, bullet_speed):
+    def __init__(self):
         self.bullet_list = arcade.SpriteList()
-        self.bullet_speed = bullet_speed
+        self.bullet_speed = 50
         self.bullet_sprite = "resources/images/laserBlue01.png"
     
-    def create_bullet(self, dest_x, dest_y, start_x, start_y):
+    def create_bullet(self, mouse_x, mouse_y, player_x, player_y):
         self.bullet = arcade.Sprite(self.bullet_sprite)
-        self.bullet.position = (start_x, start_y)
+        self.bullet.position = (player_x, player_y)
 
-        diff_x = dest_x - start_x 
-        diff_y = dest_y - start_y
+        diff_x = mouse_x - player_x 
+        diff_y = mouse_y - player_y
         bullet_angle = math.atan2(diff_y, diff_x)
         
         # determine bullet velocity
@@ -174,7 +263,7 @@ class Bullets():
             # If bullet hits a wall, remove bullet
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
-              
+                
 class Map():
     def __init__(self):
         self.map = None
@@ -209,22 +298,20 @@ class Player():
 
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player)
-        self.triangle_list = arcade.SpriteList()
-        self.triangle_list.append(self.player_triangle)
+        self.player_list.append(self.player_triangle)
 
         self.up_pressed = False
         self.down_pressed = False
         self.right_pressed = False
         self.left_pressed = False
 
-        self.bullets = Bullets(50)
+        self.bullets = Bullets()
         self.shooting = False
         self.shot_ticker = 0
 
     def draw(self):
         self.bullets.draw()
         self.player_list.draw()
-        self.triangle_list.draw()
 
     def start_movement(self, key):
         if key == arcade.key.UP or key == arcade.key.W:
@@ -274,19 +361,17 @@ class Player():
         else:
             self.player_triangle.angle = angle
 
-        self.triangle_list.update()
-
-    def shoot(self, mouse_x, mouse_y):
-        if self.shot_ticker % 15 == 0:        
-            self.bullets.create_bullet(mouse_x, mouse_y, self.player.center_x, self.player.center_y)
-        self.shot_ticker += 1
+    def shoot_bullet(self, mouse_x, mouse_y):
+        self.bullets.create_bullet(mouse_x, mouse_y, self.player.center_x, self.player.center_y)
 
     def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
 
         if self.shooting == True:
-            self.shoot(mouse_x, mouse_y)
+            if self.shot_ticker % 20 == 0:
+                self.shoot_bullet(mouse_x, mouse_y)
+            self.shot_ticker += 1
 
         self.player_list.update()
         self.bullets.update(view_left, view_bottom, enemy_list, wall_list)
@@ -301,7 +386,7 @@ class Game(arcade.Window):
         self.map = Map()
 
         # Sprite Lists Initialization
-        # self.all_sprites = None
+        self.all_sprites = None
         self.enemy_list = None
 
         self.mouse_x = 1
@@ -313,11 +398,36 @@ class Game(arcade.Window):
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
+        self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
+
         self.scrolling = Scrolling(self.player)
+        
+
+        # self.all_sprites.append(self.player.player)
+
+        # self.all_sprites.append(self.player.player_triangle)
+
+
+        # Used to keep track of our scrolling
+        self.view_bottom = 0
+        self.view_left = 0
+
+
         self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player.player)
+
+        for i in range(starting_enemy_count):
+            image_no = random.randrange(4)      #unused variable Should we remove this line?
+            enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
+           
+            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
+            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
+
+            self.all_sprites.append(enemy_sprite)
+            self.enemy_list.append(enemy_sprite)
+
         EnemySprite.creation(self)
-        self.enemy_bullets = Bullets(5)
+        
 
     def on_draw(self):
         """
@@ -332,14 +442,26 @@ class Game(arcade.Window):
         self.map.draw_walls()
 
         # Call draw() on all your sprite lists below
+        self.all_sprites.draw()
         self.enemy_list.draw()
-        self.enemy_bullets.draw()
         self.player.draw()
 
     def on_update(self, delta_time):
         self.map.update()       # Updates the player and wall physics. 
+      
+        for enemy in self.enemy_list:
+            EnemySprite.movement(self, self.player.player, enemy)
+
+        # Updates all sprites. Do we want to update even the walls and whatnot? We might need to for screen scrolling. 
+        self.all_sprites.update()
+        self.enemy_list.update()
 
         EnemySprite.update_enemy(self)
+
+        # --- Manage Scrolling ---
+        # Track if we need to change the viewport
+
+        changed = False
 
         self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list)
 
@@ -348,12 +470,14 @@ class Game(arcade.Window):
         self.scrolling.scroll_up()
         self.scrolling.scroll_down()
 
+        
     def on_key_press(self, key, key_modifiers):
         """
         Called whenever a key on the keyboard is pressed.
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
+        
         self.player.start_movement(key)
 
         if key == arcade.key.Q:
@@ -363,6 +487,10 @@ class Game(arcade.Window):
         self.player.stop_movement(key)
 
     def on_mouse_motion(self, x, y, dx, dy):
+        # These two lines are two types of player motion based on the mouse. Uncomment to unlock the motion.
+        # self.player.position = (self.player.center_x + dx, self.player.center_y + dy)       # Change Mouse Movement
+        # self.player.position = (x, y)                                                       # Mouse Movement
+
         self.mouse_x = x + self.scrolling.view_left
         self.mouse_y = y + self.scrolling.view_bottom
 
@@ -370,6 +498,7 @@ class Game(arcade.Window):
         """
         Called when the user presses a mouse button.
         """
+        
         self.player.shooting = True
         self.player.shot_ticker = 0
         self.mouse_x = x + self.scrolling.view_left
@@ -386,7 +515,6 @@ def main():
     game = Game()
     game.setup()
     arcade.run()
-
 
 if __name__ == "__main__":
     main() 
