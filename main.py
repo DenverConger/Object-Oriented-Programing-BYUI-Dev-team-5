@@ -25,9 +25,9 @@ personality = "random"
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
-LEFT_VIEWPORT_MARGIN = 50
+LEFT_VIEWPORT_MARGIN = 150
 RIGHT_VIEWPORT_MARGIN = 250
-BOTTOM_VIEWPORT_MARGIN = 50
+BOTTOM_VIEWPORT_MARGIN = 150
 TOP_VIEWPORT_MARGIN = 250
 
 class Scrolling():
@@ -78,49 +78,48 @@ class Scrolling():
                                 SCREEN_HEIGHT + self.view_bottom)
 
 class EnemySprite(arcade.Sprite):
-    """ Sprite that represents an enemy. 
-        Denver - I plan on Adding a intelligence to the enemy
-        there is no documentation for it so 
-        i have to do it custom"""
-
-        # """Kyler: Could we add all of enemy's behaviors into this class?"""
-
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
-        self.size = 0
+        self.size = 0    
 
     def movement(self, player, enemy):
+        if (math.sqrt(((enemy.center_y - player.center_y))**2 + ((enemy.center_x - player.center_x))**2) < 650): 
+            if arcade.has_line_of_sight(self.player.position,
+                                            enemy.position,
+                                            self.map.wall_list):
+                if enemy.center_y < player.center_y:
+                    enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
+                elif enemy.center_y > player.center_y:
+                    enemy.center_y -= min(SPRITE_SPEED, enemy.center_y - player.center_y)
+                if enemy.center_x < player.center_x:
+                    enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
+                elif enemy.center_x > player.center_x:
+                    enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
+                
 
-            if enemy.center_y < player.center_y:
-                enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
-            elif enemy.center_y > player.center_y:
-                enemy.center_y -= min(SPRITE_SPEED, enemy.center_y - player.center_y)
-            if enemy.center_x < player.center_x:
-                enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
-            elif enemy.center_x > player.center_x:
-                enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
-
-    def creation(self):
+    def update_enemy(self):
         enemies = arcade.check_for_collision_with_list(self.player, self.enemy_list)
         if len(enemies) > 0:
                 enemies[0].remove_from_sprite_lists()
         
-        for enemy in self.enemy_list:
-                # If the enemy hit a wall, reverse
-                if len(arcade.check_for_collision_with_list(enemy, self.wall_list)) > 0:
-                    enemy.change_x *= -1
-                    enemy.change_y *= -1
-        for enemy in self.enemy_list:
-                # If the enemy hits an enemy, reverse
-                if len(arcade.check_for_collision_with_list(enemy, self.enemy_list)) > 0:
-                    enemy.change_x *= -1
-                    enemy.change_y *= -1
+    def creation(self):
+        for i in range(starting_enemy_count):
+            image_no = random.randrange(4)
+            enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
+           
+            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
+            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
+
+            self.all_sprites.append(enemy_sprite)
+            self.enemy_list.append(enemy_sprite)
+
+
 
 class Bullets():
     def __init__(self):
         self.bullet_list = arcade.SpriteList()
         self.bullet_speed = 50
-        self.bullet_sprite = ":resources:images/space_shooter/laserBlue01.png"
+        self.bullet_sprite = "resources/images/laserBlue01.png"
     
     def create_bullet(self, mouse_x, mouse_y, player_x, player_y):
         self.bullet = arcade.Sprite(self.bullet_sprite)
@@ -158,7 +157,47 @@ class Bullets():
                 bullet.remove_from_sprite_lists()
 
         self.bullet_list.update()
-        
+        for bullet in self.bullet_list:
+
+            # remove bullet if it leaves screen
+            if bullet.center_x < view_left or bullet.center_x > view_left + SCREEN_WIDTH or bullet.center_y < view_bottom or bullet.center_y > view_bottom + SCREEN_HEIGHT:
+                bullet.remove_from_sprite_lists()
+
+            # If bullet hits an enemy, damage the enemy and remove bullet
+            hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+                hit_list[0].remove_from_sprite_lists()
+
+            # If bullet hits a wall, remove bullet
+            if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
+                bullet.remove_from_sprite_lists()
+
+
+class Map():
+    def __init__(self):
+        self.map = None
+        self.wall_physics = None
+
+    def load_map(self, map, player):
+        self.map = map
+        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', 2)
+        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', 2)
+        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', 2)
+
+        self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
+
+    def draw_bottom(self):
+        self.background_list.draw()
+        self.floor_list.draw()
+
+    def draw_walls(self):
+        self.wall_list.draw()
+    
+    def update(self):
+        self.wall_physics.update()
+
+
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
@@ -167,7 +206,6 @@ class Game(arcade.Window):
 
         # Sprite Lists Initialization
         self.all_sprites = None
-        self.wall_list = None
         self.enemy_list = None
         self.player_list = None
         self.player = None
@@ -181,19 +219,22 @@ class Game(arcade.Window):
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
-        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
+        self.player = arcade.Sprite("resources/images/player_circle.png", SCALING, hit_box_algorithm = 'None')
         self.player_triangle = arcade.Sprite("resources/images/player_arrow.png", SCALING)
         self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.all_sprites = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
-        wall_img = ":resources:images/tiles/brickBrown.png"
+        
         self.player.center_x = 50
         self.player.center_y = 50
+
         self.bullets = Bullets()
         self.shooting = False
         self.shot_ticker = 0
         self.scrolling = Scrolling(self.player)
+
+        self.map = Map()
         
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.player_triangle.position = self.player.position
@@ -211,11 +252,10 @@ class Game(arcade.Window):
         self.view_bottom = 0
         self.view_left = 0
 
-        self.current_map = None
-        self.load_map(self.current_map)
+        self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player)
 
         for i in range(starting_enemy_count):
-            image_no = random.randrange(4)
+            image_no = random.randrange(4)      #unused variable Should we remove this line?
             enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
            
             enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
@@ -223,15 +263,9 @@ class Game(arcade.Window):
 
             self.all_sprites.append(enemy_sprite)
             self.enemy_list.append(enemy_sprite)
-    
-    def load_map(self, map):
-        map = arcade.tilemap.read_tmx('resources/maps/map0.tmx')
 
-        self.wall_list = arcade.tilemap.process_layer(map, 'Walls', 2)
-        self.floor_list = arcade.tilemap.process_layer(map, 'Floor', 2)
-        self.background_list = arcade.tilemap.process_layer(map, 'Ground', 2)
+        EnemySprite.creation(self)
         
-        self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)
 
     def on_draw(self):
         """
@@ -242,18 +276,16 @@ class Game(arcade.Window):
         arcade.start_render()
 
         # Drawing map lists
-        self.background_list.draw()
-        self.floor_list.draw()
+        self.map.draw_bottom()
         self.bullets.draw()
-        self.wall_list.draw()
+        self.map.draw_walls()
 
         # Call draw() on all your sprite lists below
         self.all_sprites.draw()
         self.enemy_list.draw()
 
     def on_update(self, delta_time):
-        # self.physics_engine.update()
-        self.wall_physics.update()
+        self.map.update()       # Updates the player and wall physics. 
 
         self.player.change_y = 0
         self.player.change_x = 0
@@ -270,17 +302,6 @@ class Game(arcade.Window):
             self.player.change_x = MOVEMENT_SPEED
         elif self.left_pressed and not self.right_pressed:
             self.player.change_x = -MOVEMENT_SPEED
-        # If you press both up and down, you can move the player right, but not left. If you press right and left, you can move the player down, but not up.
-
-        # Hitting Edges of Screen
-        # if self.player.top > SCREEN_HEIGHT:
-        #     self.player.top = SCREEN_HEIGHT
-        # if self.player.bottom < 0:
-        #     self.player.bottom = 0
-        # if self.player.left < 0:
-        #     self.player.left = 0
-        # if self.player.right > SCREEN_WIDTH:
-        #     self.player.right = SCREEN_WIDTH
         
         self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly. I kind of like it wobbly. Needs to be uncommented even if you also use the line below.  
         self.player_triangle.velocity = self.player.velocity        # This line uncommented makes it strict. 
@@ -299,7 +320,12 @@ class Game(arcade.Window):
         self.all_sprites.update()
         self.enemy_list.update()
 
-        EnemySprite.creation(self)
+        EnemySprite.update_enemy(self)
+
+        # --- Manage Scrolling ---
+        # Track if we need to change the viewport
+
+        changed = False
 
         self.scrolling.scroll_left()
         self.scrolling.scroll_right()
@@ -310,7 +336,8 @@ class Game(arcade.Window):
             if self.shot_ticker % 20 == 0:
                 self.bullets.create_bullet(self.mouse_x, self.mouse_y, self.player.center_x, self.player.center_y)
             self.shot_ticker += 1
-        self.bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.wall_list)
+
+        self.bullets.update(self.view_left, self.view_bottom, self.enemy_list, self.map.wall_list)
         
     def on_key_press(self, key, key_modifiers):
         """
@@ -353,8 +380,10 @@ class Game(arcade.Window):
         """
         Called when the user presses a mouse button.
         """
+
         self.mouse_x = x + self.scrolling.view_left
         self.mouse_y = y + self.scrolling.view_bottom
+
         self.shooting = True
         self.shot_ticker = 0
 
