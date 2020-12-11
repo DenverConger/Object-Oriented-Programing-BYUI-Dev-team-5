@@ -30,42 +30,39 @@ TOP_LIMIT = SCREEN_HEIGHT
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
-LEFT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
-RIGHT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
-BOTTOM_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
-TOP_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
+
 
 class Scrolling():
     def __init__(self, player):
-        self.view_bottom = 0
-        self.view_left = 0
+        self.LEFT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
+        self.RIGHT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
+        self.BOTTOM_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
+        self.TOP_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
+
         self.player = player
+        self.view_bottom = self.player.player.center_y
+        self.view_left = self.player.player.center_x
+        
         self.changed = False
 
-    def scroll_left(self):
+    def update(self):
         # Scroll left
-        left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
+        left_boundary = self.view_left + self.LEFT_VIEWPORT_MARGIN
         if self.player.player.left < left_boundary:
             self.view_left -= left_boundary - self.player.player.left
             self.changed = True
-
-    def scroll_right(self):
         # Scroll right
-        right_boundary = self.view_left + SCREEN_WIDTH - RIGHT_VIEWPORT_MARGIN
+        right_boundary = self.view_left + SCREEN_WIDTH - self.RIGHT_VIEWPORT_MARGIN
         if self.player.player.right > right_boundary:
             self.view_left += self.player.player.right - right_boundary
             self.changed = True
-
-    def scroll_up(self):
         # Scroll up
-        top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN
+        top_boundary = self.view_bottom + SCREEN_HEIGHT - self.TOP_VIEWPORT_MARGIN
         if self.player.player.top > top_boundary:
             self.view_bottom += self.player.player.top - top_boundary
             self.changed = True
-
-    def scroll_down(self):
         # Scroll down
-        bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN
+        bottom_boundary = self.view_bottom + self.BOTTOM_VIEWPORT_MARGIN
         if self.player.player.bottom < bottom_boundary:
             self.view_bottom -= bottom_boundary - self.player.player.bottom
             self.changed = True
@@ -81,13 +78,16 @@ class Scrolling():
                                 SCREEN_WIDTH + self.view_left,
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
+        
+        # If the margins were changed to center the viewport, this will change the viewport back. 
+        if self.LEFT_VIEWPORT_MARGIN == SCREEN_WIDTH / 2:
+            self.change_viewport_margins(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4)
 
-    def _change_viewport_margins(self, width_margin, height_margin):
-        LEFT_VIEWPORT_MARGIN = width_margin
-        RIGHT_VIEWPORT_MARGIN = width_margin
-        BOTTOM_VIEWPORT_MARGIN = height_margin
-        TOP_VIEWPORT_MARGIN = height_margin
-
+    def change_viewport_margins(self, width_margin, height_margin):
+        self.LEFT_VIEWPORT_MARGIN = width_margin
+        self.RIGHT_VIEWPORT_MARGIN = width_margin
+        self.BOTTOM_VIEWPORT_MARGIN = height_margin
+        self.TOP_VIEWPORT_MARGIN = height_margin
 
 class EnemySprite(arcade.Sprite):
     def __init__(self, image_file_name, scale):
@@ -326,19 +326,15 @@ class Game(arcade.Window):
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
         self.enemy_list = arcade.SpriteList()
-        self.scrolling = Scrolling(self.player)
+        
         self.map.load_map(arcade.tilemap.read_tmx('resources/maps/level0.tmx'), self.player.player)
         EnemySprite.creation(self)
         self.enemy_bullets = Bullets(5)
 
-        # My attempt at centering the player.
+        # Brings player to the center and centers the viewport. Viewport is changed to normal in scrolling.update()
         self.player.player.position = (MAP_WIDTH / 2, MAP_HEIGHT / 2)
-        self.scrolling._change_viewport_margins(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-        
-        # self.player.update(self.mouse_x, self.mouse_y, None, None, self.enemy_list, None)
-        # self.scrolling.view_bottom += SCREEN_HEIGHT
-        # arcade.set_viewport( (MAP_WIDTH / 2) - (SCREEN_WIDTH), (MAP_WIDTH / 2) + (SCREEN_WIDTH), (MAP_HEIGHT / 2) - (SCREEN_HEIGHT), (MAP_HEIGHT / 2) + (SCREEN_HEIGHT))
-        # left, right, bottom, top
+        self.scrolling = Scrolling(self.player)
+        self.scrolling.change_viewport_margins(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
     def on_draw(self):
         """
@@ -364,10 +360,7 @@ class Game(arcade.Window):
 
         self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list)
 
-        self.scrolling.scroll_left()
-        self.scrolling.scroll_right()
-        self.scrolling.scroll_up()
-        self.scrolling.scroll_down()
+        self.scrolling.update()
 
     def on_key_press(self, key, key_modifiers):
         """
