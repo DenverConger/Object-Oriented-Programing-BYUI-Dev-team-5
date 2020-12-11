@@ -82,6 +82,13 @@ class Scrolling():
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
 
+    def _change_viewport_margins(self, width_margin, height_margin):
+        LEFT_VIEWPORT_MARGIN = width_margin
+        RIGHT_VIEWPORT_MARGIN = width_margin
+        BOTTOM_VIEWPORT_MARGIN = height_margin
+        TOP_VIEWPORT_MARGIN = height_margin
+
+
 class EnemySprite(arcade.Sprite):
     def __init__(self, image_file_name, scale):
         super().__init__(image_file_name, scale=scale)
@@ -326,9 +333,11 @@ class Game(arcade.Window):
 
         # My attempt at centering the player.
         self.player.player.position = (MAP_WIDTH / 2, MAP_HEIGHT / 2)
-        self.player.update(self.mouse_x, self.mouse_y, None, None, self.enemy_list, None)
-        self.scrolling.view_bottom += SCREEN_HEIGHT
-        arcade.set_viewport( (MAP_WIDTH / 2) - (SCREEN_WIDTH), (MAP_WIDTH / 2) + (SCREEN_WIDTH), (MAP_HEIGHT / 2) - (SCREEN_HEIGHT), (MAP_HEIGHT / 2) + (SCREEN_HEIGHT))
+        self.scrolling._change_viewport_margins(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+        
+        # self.player.update(self.mouse_x, self.mouse_y, None, None, self.enemy_list, None)
+        # self.scrolling.view_bottom += SCREEN_HEIGHT
+        # arcade.set_viewport( (MAP_WIDTH / 2) - (SCREEN_WIDTH), (MAP_WIDTH / 2) + (SCREEN_WIDTH), (MAP_HEIGHT / 2) - (SCREEN_HEIGHT), (MAP_HEIGHT / 2) + (SCREEN_HEIGHT))
         # left, right, bottom, top
 
     def on_draw(self):
