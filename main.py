@@ -121,7 +121,8 @@ class EnemySprite(arcade.Sprite):
                 enemies[0].remove_from_sprite_lists()
                 
         self.enemy_list.update()
-        self.enemy_bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player_list, self.map.wall_list)
+        
+        self.enemy_bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.map.wall_list)
         
     def creation(self):
         for i in range(starting_enemy_count):
@@ -157,7 +158,7 @@ class Bullets():
     def draw(self):
         self.bullet_list.draw()
 
-    def update(self, view_left, view_bottom, enemy_list, wall_list):
+    def update(self, view_left, view_bottom, wall_list):
         self.bullet_list.update()
         for bullet in self.bullet_list:
 
@@ -165,16 +166,26 @@ class Bullets():
             if bullet.center_x < view_left or bullet.center_x > view_left + SCREEN_WIDTH or bullet.center_y < view_bottom or bullet.center_y > view_bottom + SCREEN_HEIGHT:
                 bullet.remove_from_sprite_lists()
 
-            # If bullet hits an enemy, damage the enemy and remove bullet
+            """# If bullet hits an enemy, damage the enemy and remove bullet
             hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
             if len(hit_list) > 0:
                 bullet.remove_from_sprite_lists()
-                hit_list[0].remove_from_sprite_lists()
+                
+                hit_list[0].remove_from_sprite_lists()"""
 
             # If bullet hits a wall, remove bullet
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
-              
+
+    def update_hit(self, view_left, view_bottom, enemy_list):
+        self.bullet_list.update()
+        for bullet in self.bullet_list:
+            hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+                
+                hit_list[0].remove_from_sprite_lists()
+
 class Map():
     def __init__(self):
         self.map = None
@@ -220,6 +231,8 @@ class Player():
         self.bullets = Bullets(50)
         self.shooting = False
         self.shot_ticker = 0
+
+        self.health = 3
 
     def draw(self):
         self.bullets.draw()
@@ -281,6 +294,14 @@ class Player():
             self.bullets.create_bullet(mouse_x, mouse_y, self.player.center_x, self.player.center_y)
         self.shot_ticker += 1
 
+    """def check_hit(self, bullet, bullet_list):
+        hit = arcade.check_for_collision_with_list(self.player, self.bullet_list)
+        if len(hit) > 0:
+            if self.health > 0:
+                self.health -= 1
+            else:
+                quit()"""
+
     def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
@@ -289,8 +310,11 @@ class Player():
             self.shoot(mouse_x, mouse_y)
 
         self.player_list.update()
-        self.bullets.update(view_left, view_bottom, enemy_list, wall_list)
+        self.bullets.update(view_left, view_bottom, wall_list)
+        self.bullets.update_hit(view_left, view_bottom, enemy_list)
+        #self.check_hit()
 
+    
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
@@ -299,6 +323,7 @@ class Game(arcade.Window):
 
         self.player = Player()
         self.map = Map()
+
 
         # Sprite Lists Initialization
         # self.all_sprites = None
@@ -347,7 +372,7 @@ class Game(arcade.Window):
         self.scrolling.scroll_right()
         self.scrolling.scroll_up()
         self.scrolling.scroll_down()
-
+        
     def on_key_press(self, key, key_modifiers):
         """
         Called whenever a key on the keyboard is pressed.
