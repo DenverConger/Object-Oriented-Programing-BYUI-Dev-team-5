@@ -109,7 +109,7 @@ class EnemySprite(arcade.Sprite):
             if enemy.player_detected:
                 if enemy.shot_timer % 60 == 0:
                     self.enemy_bullets.create_bullet(player.center_x, player.center_y, enemy.center_x, enemy.center_y)
-                enemy.shot_timer += .5
+                enemy.shot_timer += 1
                     
     def update_enemy(self):
         EnemySprite.detect_player(self, self.player.player)
@@ -166,11 +166,19 @@ class Bullets():
             if bullet.center_x < view_left or bullet.center_x > view_left + SCREEN_WIDTH or bullet.center_y < view_bottom or bullet.center_y > view_bottom + SCREEN_HEIGHT:
                 bullet.remove_from_sprite_lists()
 
+            """# If bullet hits an enemy, damage the enemy and remove bullet
+            hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+                
+                hit_list[0].remove_from_sprite_lists()"""
+
             # If bullet hits a wall, remove bullet
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
 
     def update_hit(self, view_left, view_bottom, enemy_list):
+        self.bullet_list.update()
         for bullet in self.bullet_list:
             hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
             if len(hit_list) > 0:
@@ -211,7 +219,7 @@ class Map():
         self.wall_physics.update()
 
 class Player():
-    health = 3
+    
     def __init__(self):
         self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -233,6 +241,7 @@ class Player():
         self.shooting = False
         self.shot_ticker = 0
 
+        self.health = 3
 
     def draw(self):
         self.bullets.draw()
@@ -302,6 +311,9 @@ class Player():
             else:
                 quit()"""
 
+    def change_health(self, change):
+        self.health += change
+
     def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list, player):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
@@ -367,6 +379,7 @@ class Game(arcade.Window):
 
         EnemySprite.update_enemy(self)
 
+        # self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player_list)
         self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player)
         self.enemy_bullets.update_hit_player(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player, self.player)
 
