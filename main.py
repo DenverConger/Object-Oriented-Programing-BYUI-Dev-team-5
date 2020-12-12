@@ -166,13 +166,6 @@ class Bullets():
             if bullet.center_x < view_left or bullet.center_x > view_left + SCREEN_WIDTH or bullet.center_y < view_bottom or bullet.center_y > view_bottom + SCREEN_HEIGHT:
                 bullet.remove_from_sprite_lists()
 
-            """# If bullet hits an enemy, damage the enemy and remove bullet
-            hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
-            if len(hit_list) > 0:
-                bullet.remove_from_sprite_lists()
-                
-                hit_list[0].remove_from_sprite_lists()"""
-
             # If bullet hits a wall, remove bullet
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
@@ -303,14 +296,6 @@ class Player():
             self.bullets.create_bullet(mouse_x, mouse_y, self.player.center_x, self.player.center_y)
         self.shot_ticker += 1
 
-    """def check_hit(self, bullet, bullet_list):
-        hit = arcade.check_for_collision_with_list(self.player, self.bullet_list)
-        if len(hit) > 0:
-            if self.health > 0:
-                self.health -= 1
-            else:
-                quit()"""
-
     def change_health(self, change):
         self.health += change
 
@@ -379,7 +364,6 @@ class Game(arcade.Window):
 
         EnemySprite.update_enemy(self)
 
-        # self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player_list)
         self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player)
         self.enemy_bullets.update_hit_player(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player, self.player)
 
