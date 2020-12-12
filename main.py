@@ -186,6 +186,16 @@ class Bullets():
                 
                 hit_list[0].remove_from_sprite_lists()
 
+
+
+    def update_hit_player(self, view_left, view_bottom, player_list):
+        self.bullet_list.update()
+        for bullet in self.bullet_list:
+            if arcade.check_for_collision_with_list(bullet, player_list):
+                Player.health -= 1
+            if Player.health == 0:
+                player_list.kill
+
 class Map():
     def __init__(self):
         self.map = None
@@ -210,7 +220,7 @@ class Map():
         self.wall_physics.update()
 
 class Player():
-
+    
     def __init__(self):
         self.player = arcade.Sprite("resources/images/player_circle.png", SCALING, hit_box_algorithm = 'None')
         self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -302,7 +312,7 @@ class Player():
             else:
                 quit()"""
 
-    def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list):
+    def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list, player_list):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
 
@@ -312,6 +322,7 @@ class Player():
         self.player_list.update()
         self.bullets.update(view_left, view_bottom, wall_list)
         self.bullets.update_hit(view_left, view_bottom, enemy_list)
+        self.bullets.update_hit_player(view_left, view_bottom, player_list)
         #self.check_hit()
 
     
@@ -339,6 +350,7 @@ class Game(arcade.Window):
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
         self.enemy_list = arcade.SpriteList()
+        self.player_list = arcade.SpriteList()
         self.scrolling = Scrolling(self.player)
         self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player.player)
         EnemySprite.creation(self)
@@ -366,7 +378,7 @@ class Game(arcade.Window):
 
         EnemySprite.update_enemy(self)
 
-        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list)
+        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player_list)
 
         self.scrolling.scroll_left()
         self.scrolling.scroll_right()
