@@ -191,24 +191,35 @@ class Map():
     def __init__(self):
         self.map = None
         self.wall_physics = None
+        self.lock_physics = None
 
     def load_map(self, map, player):
         self.map = map
+        self.top_list = arcade.tilemap.process_layer(self.map, 'Top', SCALING_MAP)
+        self.lock_list = arcade.tilemap.process_layer(self.map, 'Locks', SCALING_MAP)
         self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP)
+        self.key_list = arcade.tilemap.process_layer(self.map, 'Keys', SCALING_MAP)
         self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP)
         self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP)
 
         self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
+        self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
 
     def draw_bottom(self):
         self.background_list.draw()
         self.floor_list.draw()
+        self.key_list.draw()
 
     def draw_walls(self):
         self.wall_list.draw()
+        self.lock_list.draw()
+
+    def draw_top(self):
+        self.top_list.draw()
     
     def update(self):
         self.wall_physics.update()
+        self.lock_physics.update()
 
 class Player():
 
@@ -344,14 +355,17 @@ class Game(arcade.Window):
         # the screen to the background color, and erase what we drew last frame.
         arcade.start_render()
 
-        # Drawing map lists
+        # Call layers to be below the player here. 
         self.map.draw_bottom()
         self.map.draw_walls()
 
-        # Call draw() on all your sprite lists below
+        # Call draw() on all your sprite lists below.
         self.enemy_list.draw()
         self.enemy_bullets.draw()
         self.player.draw()
+
+        # Draw layers to be on top of the player here.
+        self.map.draw_top()
 
     def on_update(self, delta_time):
         self.map.update()       # Updates the player and wall physics. 
