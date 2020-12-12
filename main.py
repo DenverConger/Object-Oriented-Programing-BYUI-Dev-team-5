@@ -12,55 +12,57 @@ SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
 SCREEN_TITLE = "Arena"
 SCALING = 0.5
-MOVEMENT_SPEED = 7  
-OFFSCREEN_SPACE = 300
-LEFT_LIMIT = 0
-RIGHT_LIMIT = SCREEN_WIDTH
-BOTTOM_LIMIT = 0
-TOP_LIMIT = SCREEN_HEIGHT
+SCALING_MAP = 2
+TILE_SIZE = 32
+MAP_WIDTH = (TILE_SIZE * SCALING_MAP * 100) - 1
+MAP_HEIGHT = (TILE_SIZE * SCALING_MAP * 100) - 1
+
+
+MOVEMENT_SPEED = 7      # What is the difference between MOVEMENT_SPEED and SPRITE_SPEED?
 SPRITE_SPEED = 1    
 starting_enemy_count = 10
 personality = "random"
 
+LEFT_LIMIT = 0          # Do you guys think that we could make do without these constants? -Kyler
+RIGHT_LIMIT = SCREEN_WIDTH
+BOTTOM_LIMIT = 0
+TOP_LIMIT = SCREEN_HEIGHT
 
 # How many pixels to keep as a minimum margin between the character
 # and the edge of the screen.
-LEFT_VIEWPORT_MARGIN = 150
-RIGHT_VIEWPORT_MARGIN = 250
-BOTTOM_VIEWPORT_MARGIN = 150
-TOP_VIEWPORT_MARGIN = 250
+
 
 class Scrolling():
     def __init__(self, player):
-        self.view_bottom = 0
-        self.view_left = 0
+        self.LEFT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
+        self.RIGHT_VIEWPORT_MARGIN = SCREEN_WIDTH / 4
+        self.BOTTOM_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
+        self.TOP_VIEWPORT_MARGIN = SCREEN_HEIGHT / 4
+
         self.player = player
+        self.view_bottom = self.player.player.center_y
+        self.view_left = self.player.player.center_x
+        
         self.changed = False
 
-    def scroll_left(self):
+    def update(self):
         # Scroll left
-        left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
+        left_boundary = self.view_left + self.LEFT_VIEWPORT_MARGIN
         if self.player.player.left < left_boundary:
             self.view_left -= left_boundary - self.player.player.left
             self.changed = True
-
-    def scroll_right(self):
         # Scroll right
-        right_boundary = self.view_left + SCREEN_WIDTH - RIGHT_VIEWPORT_MARGIN
+        right_boundary = self.view_left + SCREEN_WIDTH - self.RIGHT_VIEWPORT_MARGIN
         if self.player.player.right > right_boundary:
             self.view_left += self.player.player.right - right_boundary
             self.changed = True
-
-    def scroll_up(self):
         # Scroll up
-        top_boundary = self.view_bottom + SCREEN_HEIGHT - TOP_VIEWPORT_MARGIN
+        top_boundary = self.view_bottom + SCREEN_HEIGHT - self.TOP_VIEWPORT_MARGIN
         if self.player.player.top > top_boundary:
             self.view_bottom += self.player.player.top - top_boundary
             self.changed = True
-
-    def scroll_down(self):
         # Scroll down
-        bottom_boundary = self.view_bottom + BOTTOM_VIEWPORT_MARGIN
+        bottom_boundary = self.view_bottom + self.BOTTOM_VIEWPORT_MARGIN
         if self.player.player.bottom < bottom_boundary:
             self.view_bottom -= bottom_boundary - self.player.player.bottom
             self.changed = True
@@ -76,6 +78,16 @@ class Scrolling():
                                 SCREEN_WIDTH + self.view_left,
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
+        
+        # If the margins were changed to center the viewport, this will change the viewport back. 
+        if self.LEFT_VIEWPORT_MARGIN == SCREEN_WIDTH / 2:
+            self.change_viewport_margins(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4)
+
+    def change_viewport_margins(self, width_margin, height_margin):
+        self.LEFT_VIEWPORT_MARGIN = width_margin
+        self.RIGHT_VIEWPORT_MARGIN = width_margin
+        self.BOTTOM_VIEWPORT_MARGIN = height_margin
+        self.TOP_VIEWPORT_MARGIN = height_margin
 
 class EnemySprite(arcade.Sprite):
     def __init__(self, image_file_name, scale):
@@ -192,30 +204,41 @@ class Map():
     def __init__(self):
         self.map = None
         self.wall_physics = None
+        self.lock_physics = None
 
     def load_map(self, map, player):
         self.map = map
-        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', 2)
-        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', 2)
-        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', 2)
+        self.top_list = arcade.tilemap.process_layer(self.map, 'Top', SCALING_MAP)
+        self.lock_list = arcade.tilemap.process_layer(self.map, 'Locks', SCALING_MAP)
+        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP)
+        self.key_list = arcade.tilemap.process_layer(self.map, 'Keys', SCALING_MAP)
+        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP)
+        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP)
 
         self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
+        self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
 
     def draw_bottom(self):
         self.background_list.draw()
         self.floor_list.draw()
+        self.key_list.draw()
 
     def draw_walls(self):
         self.wall_list.draw()
+        self.lock_list.draw()
+
+    def draw_top(self):
+        self.top_list.draw()
     
     def update(self):
         self.wall_physics.update()
+        self.lock_physics.update()
 
 class Player():
     
     def __init__(self):
         self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
-        self.player.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+        self.player.position = (3200, 3200)
 
         self.player_triangle = arcade.Sprite("resources/images/player_arrow.png", SCALING)
         self.player_triangle.position = self.player.position
@@ -334,11 +357,15 @@ class Game(arcade.Window):
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
         self.enemy_list = arcade.SpriteList()
-        self.player_list = arcade.SpriteList()
-        self.scrolling = Scrolling(self.player)
-        self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player.player)
+        
+        self.map.load_map(arcade.tilemap.read_tmx('resources/maps/level0.tmx'), self.player.player)
         EnemySprite.creation(self)
         self.enemy_bullets = Bullets(5)
+
+        # Brings player to the center and centers the viewport. Viewport is changed to normal in scrolling.update()
+        self.player.player.position = (MAP_WIDTH / 2, MAP_HEIGHT / 2)
+        self.scrolling = Scrolling(self.player)
+        self.scrolling.change_viewport_margins(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
     def on_draw(self):
         """
@@ -348,16 +375,19 @@ class Game(arcade.Window):
         # the screen to the background color, and erase what we drew last frame.
         arcade.start_render()
 
-        # Drawing map lists
+        # Call layers to be below the player here. 
         self.map.draw_bottom()
         self.map.draw_walls()
 
-        # Call draw() on all your sprite lists below
+        # Call draw() on all your sprite lists below.
         self.enemy_list.draw()
         self.enemy_bullets.draw()
         self.player.draw()
 
         arcade.draw_text("Player Health: " + str(self.player.health), self.scrolling.view_left, self.scrolling.view_bottom + SCREEN_HEIGHT - 20, arcade.color.BLACK)
+        
+        # Draw layers to be on top of the player here.
+        self.map.draw_top()
 
     def on_update(self, delta_time):
         self.map.update()       # Updates the player and wall physics. 
@@ -367,11 +397,8 @@ class Game(arcade.Window):
         self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player)
         self.enemy_bullets.update_hit_player(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player, self.player)
 
-        self.scrolling.scroll_left()
-        self.scrolling.scroll_right()
-        self.scrolling.scroll_up()
-        self.scrolling.scroll_down()
-        
+        self.scrolling.update()
+
     def on_key_press(self, key, key_modifiers):
         """
         Called whenever a key on the keyboard is pressed.
