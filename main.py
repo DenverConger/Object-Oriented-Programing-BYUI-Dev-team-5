@@ -188,13 +188,13 @@ class Bullets():
 
 
 
-    def update_hit_player(self, view_left, view_bottom, player_list):
+    def update_hit_player(self, view_left, view_bottom, player):
         self.bullet_list.update()
         for bullet in self.bullet_list:
-            if arcade.check_for_collision_with_list(bullet, player_list):
+            if arcade.check_for_collision(bullet, player):
                 Player.health -= 1
             if Player.health == 0:
-                player_list.kill
+                player.kill
 
 class Map():
     def __init__(self):
@@ -312,7 +312,7 @@ class Player():
             else:
                 quit()"""
 
-    def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list, player_list):
+    def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list, player):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
 
@@ -322,7 +322,7 @@ class Player():
         self.player_list.update()
         self.bullets.update(view_left, view_bottom, wall_list)
         self.bullets.update_hit(view_left, view_bottom, enemy_list)
-        self.bullets.update_hit_player(view_left, view_bottom, player_list)
+        self.bullets.update_hit_player( view_left, view_bottom, player)
         #self.check_hit()
 
     
@@ -378,7 +378,7 @@ class Game(arcade.Window):
 
         EnemySprite.update_enemy(self)
 
-        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player_list)
+        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player_list)
 
         self.scrolling.scroll_left()
         self.scrolling.scroll_right()
