@@ -188,12 +188,12 @@ class Bullets():
 
 
 
-    def update_hit_player(self, view_left, view_bottom, player):
+    def update_hit_player(self, view_left, view_bottom, player, player_instance):
         self.bullet_list.update()
         for bullet in self.bullet_list:
             if arcade.check_for_collision(bullet, player):
-                Player.health -= 1
-            if Player.health == 0:
+                player_instance.change_health(-1)
+            if player_instance.health == 0:
                 player.kill
 
 class Map():
@@ -312,6 +312,9 @@ class Player():
             else:
                 quit()"""
 
+    def change_health(self, change):
+        self.health += change
+
     def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list, player):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
@@ -322,7 +325,7 @@ class Player():
         self.player_list.update()
         self.bullets.update(view_left, view_bottom, wall_list)
         self.bullets.update_hit(view_left, view_bottom, enemy_list)
-        self.bullets.update_hit_player( view_left, view_bottom, player)
+        self.bullets.update_hit_player( view_left, view_bottom, player, self)
         #self.check_hit()
 
     
@@ -354,7 +357,7 @@ class Game(arcade.Window):
         self.scrolling = Scrolling(self.player)
         self.map.load_map(arcade.tilemap.read_tmx('resources/maps/map0.tmx'), self.player.player)
         EnemySprite.creation(self)
-        self.enemy_bullets = Bullets(5)
+        self.enemy_bullets = self.player.bullets
 
     def on_draw(self):
         """
@@ -373,12 +376,15 @@ class Game(arcade.Window):
         self.enemy_bullets.draw()
         self.player.draw()
 
+        arcade.draw_text("Player Health: " + str(self.player.health), self.scrolling.view_left, self.scrolling.view_bottom, arcade.color.BLACK)
+
     def on_update(self, delta_time):
         self.map.update()       # Updates the player and wall physics. 
 
         EnemySprite.update_enemy(self)
 
-        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player_list)
+        # self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player_list)
+        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player)
 
         self.scrolling.scroll_left()
         self.scrolling.scroll_right()
