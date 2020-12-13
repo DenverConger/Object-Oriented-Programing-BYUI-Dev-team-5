@@ -1,5 +1,9 @@
 """
-This is our game
+This game was created by
+Denver Conger   con19037@byui.edu
+Rhys Benson Bensonrhys702@gmail.com
+Kyler Mellor mel17006@byui.edu
+Trevor Lamoglia
 """
 import arcade
 import os
@@ -10,7 +14,7 @@ import sys
 
 SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
-SCREEN_TITLE = "Arena"
+SCREEN_TITLE = "The Dungeon"
 SCALING = 0.5
 SCALING_MAP = 2
 TILE_SIZE = 32
