@@ -1,4 +1,4 @@
-## "The Dungeon"
+## The Dungeon
 This is a prototype game designed help everyone reminisce the good old days of the original top-down Zelda games.
 
 Our GitHub repository for this game is found at:  
