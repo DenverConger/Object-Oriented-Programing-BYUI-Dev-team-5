@@ -208,12 +208,12 @@ class Map():
 
     def load_map(self, map, player):
         self.map = map
-        self.top_list = arcade.tilemap.process_layer(self.map, 'Top', SCALING_MAP)
-        self.lock_list = arcade.tilemap.process_layer(self.map, 'Locks', SCALING_MAP)
-        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP)
+        self.top_list = arcade.tilemap.process_layer(self.map, 'Top', SCALING_MAP, use_spatial_hash = True)
+        self.lock_list = arcade.tilemap.process_layer(self.map, 'Locks', SCALING_MAP, use_spatial_hash = True)
+        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP, use_spatial_hash = True)
         self.key_list = arcade.tilemap.process_layer(self.map, 'Keys', SCALING_MAP)
-        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP)
-        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP)
+        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP, use_spatial_hash = True)
+        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP, use_spatial_hash = True)
 
         self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
         self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
@@ -221,21 +221,20 @@ class Map():
     def draw_bottom(self):
         self.background_list.draw()
         self.floor_list.draw()
-        self.key_list.draw()
 
     def draw_walls(self):
         self.wall_list.draw()
         self.lock_list.draw()
 
     def draw_top(self):
+        self.key_list.draw()
         self.top_list.draw()
     
     def update(self):
         self.wall_physics.update()
         self.lock_physics.update()
 
-class Player():
-    
+class Player():   
     def __init__(self):
         self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
         self.player.position = (3200, 3200)
@@ -333,6 +332,33 @@ class Player():
         self.bullets.update(view_left, view_bottom, wall_list)
         self.bullets.update_hit(view_left, view_bottom, enemy_list)
     
+class Inventory():
+    def __init__(self, map, player):
+        self.item_list = []
+        
+        self.map = map
+        self.player = player
+
+    def add_item(self, item):
+        self.item_list.append(item)
+
+    def key_collision(self):
+        for key in self.map.key_list:
+            if arcade.check_for_collision(key, self.player.player):
+                self.add_item(key)
+
+        for lock in self.map.lock_list:
+            if arcade.check_for_collision_with_list(lock, self.player.player_list):
+                lock.remove_from_sprite_lists()
+
+    def update(self, view_bottom, view_left, player):
+        self.key_collision()
+
+        for i, item in enumerate(self.item_list):
+            if len(self.item_list) > 0:
+                item.center_y = view_bottom + 32
+                item.center_x = view_left + (i * 32 * SCALING_MAP) + 32
+
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
@@ -341,6 +367,7 @@ class Game(arcade.Window):
 
         self.player = Player()
         self.map = Map()
+        self.inventory = Inventory(self.map, self.player)
 
 
         # Sprite Lists Initialization
@@ -391,6 +418,7 @@ class Game(arcade.Window):
 
     def on_update(self, delta_time):
         self.map.update()       # Updates the player and wall physics. 
+        self.inventory.update(self.scrolling.view_bottom, self.scrolling.view_left, self.player.player)
 
         EnemySprite.update_enemy(self)
 
