@@ -3,14 +3,11 @@ This game was created by
 Denver Conger   con19037@byui.edu
 Rhys Benson Bensonrhys702@gmail.com
 Kyler Mellor mel17006@byui.edu
-Trevor Lamoglia
+Trevor Lamoglia trevorlamoglia21@gmail.com
 """
 import arcade
 import os
-import random
 import math
-from datetime import datetime, timedelta # For seeding random number generation.
-import sys
 
 SCREEN_WIDTH = 1344
 SCREEN_HEIGHT = 704
@@ -22,19 +19,8 @@ MAP_WIDTH = (TILE_SIZE * SCALING_MAP * 100) - 1
 MAP_HEIGHT = (TILE_SIZE * SCALING_MAP * 100) - 1
 MAP_NAME = 'resources/maps/level0.tmx'
 
-MOVEMENT_SPEED = 7      # What is the difference between MOVEMENT_SPEED and SPRITE_SPEED?
-SPRITE_SPEED = 1    
-starting_enemy_count = 10
-personality = "random"
-
-LEFT_LIMIT = 0          # Do you guys think that we could make do without these constants? -Kyler
-RIGHT_LIMIT = SCREEN_WIDTH
-BOTTOM_LIMIT = 0
-TOP_LIMIT = SCREEN_HEIGHT
-
-# How many pixels to keep as a minimum margin between the character
-# and the edge of the screen.
-
+PLAYER_SPEED = 7
+ENEMY_SPEED = 1
 
 class Scrolling():
     def __init__(self, player):
@@ -72,8 +58,7 @@ class Scrolling():
             self.changed = True
 
         if self.changed:
-            # Only scroll to integers. Otherwise we end up with pixels that
-            # don't line up on the screen
+            # Only scroll to integers. Otherwise we end up with pixels that don't line up on the screen
             self.view_bottom = int(self.view_bottom)
             self.view_left = int(self.view_left)
 
@@ -112,13 +97,13 @@ class EnemySprite(arcade.Sprite):
         for enemy in self.enemy_list:
             if enemy.player_detected:
                 if enemy.center_y < player.center_y:
-                    enemy.center_y += min(SPRITE_SPEED, player.center_y - enemy.center_y)
+                    enemy.center_y += min(ENEMY_SPEED, player.center_y - enemy.center_y)
                 elif enemy.center_y > player.center_y:
-                    enemy.center_y -= min(SPRITE_SPEED, enemy.center_y - player.center_y)
+                    enemy.center_y -= min(ENEMY_SPEED, enemy.center_y - player.center_y)
                 if enemy.center_x < player.center_x:
-                    enemy.center_x += min(SPRITE_SPEED, player.center_x - enemy.center_x)
+                    enemy.center_x += min(ENEMY_SPEED, player.center_x - enemy.center_x)
                 elif enemy.center_x > player.center_x:
-                    enemy.center_x -= min(SPRITE_SPEED, enemy.center_x - player.center_x)
+                    enemy.center_x -= min(ENEMY_SPEED, enemy.center_x - player.center_x)
 
     def attack(self, player):
         for enemy in self.enemy_list:
@@ -177,11 +162,11 @@ class Bullets():
         self.bullet_list.update()
         for bullet in self.bullet_list:
 
-            # remove bullet if it leaves screen
+            # Remove bullets when they leave the screen.
             if bullet.center_x < view_left or bullet.center_x > view_left + SCREEN_WIDTH or bullet.center_y < view_bottom or bullet.center_y > view_bottom + SCREEN_HEIGHT:
                 bullet.remove_from_sprite_lists()
 
-            # If bullet hits a wall, remove bullet
+            # Remove bullets when they hit a wall.
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
 
@@ -220,9 +205,10 @@ class Map():
         self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP, use_spatial_hash = True)
 
         self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)
-        # self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
 
     def collide_with_lock(self, item_list):
+        # I had to manually do collision physics because arcade doesn't allow you to use a check_for_collision statement and physics
+        # for the same object(s).
         for lock in self.lock_list:
             if arcade.check_for_collision(self.player, lock) and len(item_list) == 0 and self.player.top >= lock.bottom and lock.top > self.player.top:
                 self.player.top = lock.bottom
@@ -244,7 +230,6 @@ class Map():
     def update(self, item_list):
         self.wall_physics.update()
         self.collide_with_lock(item_list)
-        # self.lock_physics.update()
 
 class Player():   
     def __init__(self):
@@ -301,16 +286,16 @@ class Player():
 
         # Keyboard Movement
         if self.up_pressed and not self.down_pressed:
-            self.player.change_y = MOVEMENT_SPEED
+            self.player.change_y = PLAYER_SPEED
         elif self.down_pressed and not self.up_pressed:
-            self.player.change_y = -MOVEMENT_SPEED
+            self.player.change_y = -PLAYER_SPEED
         if self.right_pressed and not self.left_pressed:
-            self.player.change_x = MOVEMENT_SPEED
+            self.player.change_x = PLAYER_SPEED
         elif self.left_pressed and not self.right_pressed:
-            self.player.change_x = -MOVEMENT_SPEED
+            self.player.change_x = -PLAYER_SPEED
 
     def update_triangle(self, mouse_x, mouse_y):
-        self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly. I kind of like it wobbly. Needs to be uncommented even if you also use the line below.  
+        self.player_triangle.position = self.player.position        # This line uncommented makes it wobbly.
         self.player_triangle.velocity = self.player.velocity        # This line uncommented makes it strict. 
 
         diff1 = mouse_y - self.player_triangle.center_y
@@ -347,7 +332,6 @@ class Player():
 class Inventory():
     def __init__(self, map, player):
         self.item_list = []
-        
         self.map = map
         self.player = player
 
@@ -369,7 +353,6 @@ class Inventory():
 
     def update(self, view_bottom, view_left, player):
         self.key_collision()
-
         for i, item in enumerate(self.item_list):
             if len(self.item_list) > 0:
                 item.center_y = view_bottom + 32
@@ -387,7 +370,6 @@ class Game(arcade.Window):
 
 
         # Sprite Lists Initialization
-        # self.all_sprites = None
         self.enemy_list = None
 
         self.mouse_x = 1
@@ -399,9 +381,9 @@ class Game(arcade.Window):
 
     def setup(self):
         """ Set up the game variables. Call to re-start the game. """
-        self.enemy_list = arcade.SpriteList()
-        
         self.map.load_map(arcade.tilemap.read_tmx(MAP_NAME), self.player.player)
+        
+        self.enemy_list = arcade.SpriteList()
         EnemySprite.creation(self)
         self.enemy_bullets = Bullets(5)
 
@@ -418,7 +400,7 @@ class Game(arcade.Window):
         # the screen to the background color, and erase what we drew last frame.
         arcade.start_render()
 
-        # Call layers to be below the player here. 
+        # Call draw() on layers to be below the player here. 
         self.map.draw_bottom()
         self.map.draw_walls()
 
@@ -429,11 +411,11 @@ class Game(arcade.Window):
 
         arcade.draw_text("Player Health: " + str(self.player.health), self.scrolling.view_left, self.scrolling.view_bottom + SCREEN_HEIGHT - 20, arcade.color.BLACK)
         
-        # Draw layers to be on top of the player here.
+        # Call draw() on layers to be on top of the player here.
         self.map.draw_top()
 
     def on_update(self, delta_time):
-        self.map.update(self.inventory.item_list)       # Updates the player and wall physics. 
+        self.map.update(self.inventory.item_list)       # Updates the player/wall and player/lock physics. 
         self.inventory.update(self.scrolling.view_bottom, self.scrolling.view_left, self.player.player)
 
         EnemySprite.update_enemy(self)
@@ -482,6 +464,5 @@ def main():
     game.setup()
     arcade.run()
 
-
 if __name__ == "__main__":
-    main() 
+    main()
