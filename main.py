@@ -208,6 +208,7 @@ class Map():
 
     def load_map(self, map, player):
         self.map = map
+        self.player = player
         self.top_list = arcade.tilemap.process_layer(self.map, 'Top', SCALING_MAP, use_spatial_hash = True)
         self.lock_list = arcade.tilemap.process_layer(self.map, 'Locks', SCALING_MAP, use_spatial_hash = True)
         self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP, use_spatial_hash = True)
@@ -215,8 +216,15 @@ class Map():
         self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP, use_spatial_hash = True)
         self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP, use_spatial_hash = True)
 
-        self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
-        self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
+        self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)
+        # self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
+
+    def collide_with_lock(self, item_list):
+        for lock in self.lock_list:
+            if arcade.check_for_collision(self.player, lock) and len(item_list) == 0 and self.player.top >= lock.bottom and lock.top > self.player.top:
+                self.player.top = lock.bottom
+            if arcade.check_for_collision(self.player, lock) and len(item_list) == 0:
+                self.player.bottom = lock.top
 
     def draw_bottom(self):
         self.background_list.draw()
@@ -230,9 +238,10 @@ class Map():
         self.key_list.draw()
         self.top_list.draw()
     
-    def update(self):
+    def update(self, item_list):
         self.wall_physics.update()
-        self.lock_physics.update()
+        self.collide_with_lock(item_list)
+        # self.lock_physics.update()
 
 class Player():   
     def __init__(self):
@@ -346,10 +355,14 @@ class Inventory():
         for key in self.map.key_list:
             if arcade.check_for_collision(key, self.player.player):
                 self.add_item(key)
+                
 
         for lock in self.map.lock_list:
-            if arcade.check_for_collision_with_list(lock, self.player.player_list):
-                lock.remove_from_sprite_lists()
+            if arcade.check_for_collision(lock, self.player.player) and len(self.item_list) > 0:
+                self.item_list[len(self.item_list) - 1].kill()
+                self.item_list.remove(self.item_list[len(self.item_list) - 1])
+                
+                lock.kill()
 
     def update(self, view_bottom, view_left, player):
         self.key_collision()
@@ -417,7 +430,7 @@ class Game(arcade.Window):
         self.map.draw_top()
 
     def on_update(self, delta_time):
-        self.map.update()       # Updates the player and wall physics. 
+        self.map.update(self.inventory.item_list)       # Updates the player and wall physics. 
         self.inventory.update(self.scrolling.view_bottom, self.scrolling.view_left, self.player.player)
 
         EnemySprite.update_enemy(self)
