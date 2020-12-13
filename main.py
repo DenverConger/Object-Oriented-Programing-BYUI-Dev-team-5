@@ -133,7 +133,8 @@ class EnemySprite(arcade.Sprite):
                 enemies[0].remove_from_sprite_lists()
                 
         self.enemy_list.update()
-        self.enemy_bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player_list, self.map.wall_list)
+        
+        self.enemy_bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.map.wall_list)
         
     def creation(self):
         for i in range(starting_enemy_count):
@@ -169,7 +170,7 @@ class Bullets():
     def draw(self):
         self.bullet_list.draw()
 
-    def update(self, view_left, view_bottom, enemy_list, wall_list):
+    def update(self, view_left, view_bottom, wall_list):
         self.bullet_list.update()
         for bullet in self.bullet_list:
 
@@ -177,16 +178,28 @@ class Bullets():
             if bullet.center_x < view_left or bullet.center_x > view_left + SCREEN_WIDTH or bullet.center_y < view_bottom or bullet.center_y > view_bottom + SCREEN_HEIGHT:
                 bullet.remove_from_sprite_lists()
 
-            # If bullet hits an enemy, damage the enemy and remove bullet
-            hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
-            if len(hit_list) > 0:
-                bullet.remove_from_sprite_lists()
-                hit_list[0].remove_from_sprite_lists()
-
             # If bullet hits a wall, remove bullet
             if len(arcade.check_for_collision_with_list(bullet, wall_list)) > 0:
                 bullet.remove_from_sprite_lists()
-              
+
+    def update_hit(self, view_left, view_bottom, enemy_list):
+        self.bullet_list.update()
+        for bullet in self.bullet_list:
+            hit_list = arcade.check_for_collision_with_list(bullet, enemy_list)
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+                
+                hit_list[0].remove_from_sprite_lists()
+
+    def update_hit_player(self, view_left, view_bottom, player, player_instance):
+        self.bullet_list.update()
+        for bullet in self.bullet_list:
+            if arcade.check_for_collision(bullet, player):
+                player_instance.change_health(-1)
+                bullet.remove_from_sprite_lists()
+            if player_instance.health == 0:
+                quit()
+
 class Map():
     def __init__(self):
         self.map = None
@@ -195,34 +208,42 @@ class Map():
 
     def load_map(self, map, player):
         self.map = map
-        self.top_list = arcade.tilemap.process_layer(self.map, 'Top', SCALING_MAP)
-        self.lock_list = arcade.tilemap.process_layer(self.map, 'Locks', SCALING_MAP)
-        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP)
+        self.player = player
+        self.top_list = arcade.tilemap.process_layer(self.map, 'Top', SCALING_MAP, use_spatial_hash = True)
+        self.lock_list = arcade.tilemap.process_layer(self.map, 'Locks', SCALING_MAP, use_spatial_hash = True)
+        self.wall_list = arcade.tilemap.process_layer(self.map, 'Walls', SCALING_MAP, use_spatial_hash = True)
         self.key_list = arcade.tilemap.process_layer(self.map, 'Keys', SCALING_MAP)
-        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP)
-        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP)
+        self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP, use_spatial_hash = True)
+        self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP, use_spatial_hash = True)
 
-        self.wall_physics = arcade.PhysicsEngineSimple(player, self.wall_list)
-        self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
+        self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)
+        # self.lock_physics = arcade.PhysicsEngineSimple(player, self.lock_list)
+
+    def collide_with_lock(self, item_list):
+        for lock in self.lock_list:
+            if arcade.check_for_collision(self.player, lock) and len(item_list) == 0 and self.player.top >= lock.bottom and lock.top > self.player.top:
+                self.player.top = lock.bottom
+            if arcade.check_for_collision(self.player, lock) and len(item_list) == 0:
+                self.player.bottom = lock.top
 
     def draw_bottom(self):
         self.background_list.draw()
         self.floor_list.draw()
-        self.key_list.draw()
 
     def draw_walls(self):
         self.wall_list.draw()
         self.lock_list.draw()
 
     def draw_top(self):
+        self.key_list.draw()
         self.top_list.draw()
     
-    def update(self):
+    def update(self, item_list):
         self.wall_physics.update()
-        self.lock_physics.update()
+        self.collide_with_lock(item_list)
+        # self.lock_physics.update()
 
-class Player():
-
+class Player():   
     def __init__(self):
         self.player = arcade.Sprite("resources/images/player_circle.png", SCALING)
         self.player.position = (3200, 3200)
@@ -243,6 +264,8 @@ class Player():
         self.bullets = Bullets(50)
         self.shooting = False
         self.shot_ticker = 0
+
+        self.health = 3
 
     def draw(self):
         self.bullets.draw()
@@ -304,7 +327,10 @@ class Player():
             self.bullets.create_bullet(mouse_x, mouse_y, self.player.center_x, self.player.center_y)
         self.shot_ticker += 1
 
-    def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list):
+    def change_health(self, change):
+        self.health += change
+
+    def update(self, mouse_x, mouse_y, view_left, view_bottom, enemy_list, wall_list, player):
         self.move_player()
         self.update_triangle(mouse_x, mouse_y)
 
@@ -312,7 +338,39 @@ class Player():
             self.shoot(mouse_x, mouse_y)
 
         self.player_list.update()
-        self.bullets.update(view_left, view_bottom, enemy_list, wall_list)
+        self.bullets.update(view_left, view_bottom, wall_list)
+        self.bullets.update_hit(view_left, view_bottom, enemy_list)
+    
+class Inventory():
+    def __init__(self, map, player):
+        self.item_list = []
+        
+        self.map = map
+        self.player = player
+
+    def add_item(self, item):
+        self.item_list.append(item)
+
+    def key_collision(self):
+        for key in self.map.key_list:
+            if arcade.check_for_collision(key, self.player.player):
+                self.add_item(key)
+                
+
+        for lock in self.map.lock_list:
+            if arcade.check_for_collision(lock, self.player.player) and len(self.item_list) > 0:
+                self.item_list[len(self.item_list) - 1].kill()
+                self.item_list.remove(self.item_list[len(self.item_list) - 1])
+                
+                lock.kill()
+
+    def update(self, view_bottom, view_left, player):
+        self.key_collision()
+
+        for i, item in enumerate(self.item_list):
+            if len(self.item_list) > 0:
+                item.center_y = view_bottom + 32
+                item.center_x = view_left + (i * 32 * SCALING_MAP) + 32
 
 class Game(arcade.Window):
     def __init__(self):
@@ -322,6 +380,8 @@ class Game(arcade.Window):
 
         self.player = Player()
         self.map = Map()
+        self.inventory = Inventory(self.map, self.player)
+
 
         # Sprite Lists Initialization
         # self.all_sprites = None
@@ -364,15 +424,19 @@ class Game(arcade.Window):
         self.enemy_bullets.draw()
         self.player.draw()
 
+        arcade.draw_text("Player Health: " + str(self.player.health), self.scrolling.view_left, self.scrolling.view_bottom + SCREEN_HEIGHT - 20, arcade.color.BLACK)
+        
         # Draw layers to be on top of the player here.
         self.map.draw_top()
 
     def on_update(self, delta_time):
-        self.map.update()       # Updates the player and wall physics. 
+        self.map.update(self.inventory.item_list)       # Updates the player and wall physics. 
+        self.inventory.update(self.scrolling.view_bottom, self.scrolling.view_left, self.player.player)
 
         EnemySprite.update_enemy(self)
 
-        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list)
+        self.player.update(self.mouse_x, self.mouse_y, self.scrolling.view_left, self.scrolling.view_bottom, self.enemy_list, self.map.wall_list, self.player.player)
+        self.enemy_bullets.update_hit_player(self.scrolling.view_left, self.scrolling.view_bottom, self.player.player, self.player)
 
         self.scrolling.update()
 
