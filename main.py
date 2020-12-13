@@ -20,7 +20,7 @@ SCALING_MAP = 2
 TILE_SIZE = 32
 MAP_WIDTH = (TILE_SIZE * SCALING_MAP * 100) - 1
 MAP_HEIGHT = (TILE_SIZE * SCALING_MAP * 100) - 1
-
+MAP_NAME = 'resources/maps/level0.tmx'
 
 MOVEMENT_SPEED = 7      # What is the difference between MOVEMENT_SPEED and SPRITE_SPEED?
 SPRITE_SPEED = 1    
@@ -141,13 +141,12 @@ class EnemySprite(arcade.Sprite):
         self.enemy_bullets.update(self.scrolling.view_left, self.scrolling.view_bottom, self.map.wall_list)
         
     def creation(self):
-        for i in range(starting_enemy_count):
-            image_no = random.randrange(4)
+        self.enemy_layer_list = arcade.tilemap.process_layer(arcade.tilemap.read_tmx(MAP_NAME), 'Enemies', SCALING_MAP)
+        for enemy in self.enemy_layer_list:
             enemy_sprite = EnemySprite("resources/images/enemy_square.png", SCALING * .5)
-           
-            enemy_sprite.center_y = random.randrange(BOTTOM_LIMIT + 100, TOP_LIMIT - 100)
-            enemy_sprite.center_x = random.randrange(LEFT_LIMIT + 100, RIGHT_LIMIT - 100)
-
+            enemy_sprite.center_x = enemy.center_x
+            enemy_sprite.center_y = enemy.center_y
+            enemy_sprite.remove_from_sprite_lists()
             self.enemy_list.append(enemy_sprite)
 
 class Bullets():
@@ -402,7 +401,7 @@ class Game(arcade.Window):
         """ Set up the game variables. Call to re-start the game. """
         self.enemy_list = arcade.SpriteList()
         
-        self.map.load_map(arcade.tilemap.read_tmx('resources/maps/level0.tmx'), self.player.player)
+        self.map.load_map(arcade.tilemap.read_tmx(MAP_NAME), self.player.player)
         EnemySprite.creation(self)
         self.enemy_bullets = Bullets(5)
 
