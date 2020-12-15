@@ -204,7 +204,17 @@ class Map():
         self.floor_list = arcade.tilemap.process_layer(self.map, 'Floor', SCALING_MAP, use_spatial_hash = True)
         self.background_list = arcade.tilemap.process_layer(self.map, 'Ground', SCALING_MAP, use_spatial_hash = True)
 
+        self.maze_layer = arcade.tilemap.process_layer(self.map, 'Maze_Walls', SCALING_MAP, use_spatial_hash= False)
+        self.maze_layer_transparent = arcade.SpriteList()
+        for maze_block in self.maze_layer:
+            transparency = arcade.Sprite("resources/images/Transparent Tile.png", SCALING_MAP, hit_box_algorithm= 'None')
+            transparency.center_x = maze_block.center_x
+            transparency.center_y = maze_block.center_y
+            transparency.remove_from_sprite_lists()
+            self.maze_layer_transparent.append(transparency)
+
         self.wall_physics = arcade.PhysicsEngineSimple(self.player, self.wall_list)
+        self.maze_physics = arcade.PhysicsEngineSimple(self.player, self.maze_layer_transparent)
 
     def collide_with_lock(self, item_list):
         # I had to manually do collision physics because arcade doesn't allow you to use a check_for_collision statement and physics
@@ -222,6 +232,8 @@ class Map():
     def draw_walls(self):
         self.wall_list.draw()
         self.lock_list.draw()
+        self.maze_layer_transparent.draw()
+        # self.maze_layer_transparent.draw_hit_boxes(color= (255, 0, 0))
 
     def draw_top(self):
         self.key_list.draw()
@@ -229,6 +241,7 @@ class Map():
     
     def update(self, item_list):
         self.wall_physics.update()
+        self.maze_physics.update()
         self.collide_with_lock(item_list)
 
 class Player():   
